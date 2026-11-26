@@ -1,0 +1,7 @@
+fonte,tabela_bigquery,aba_do_painel,como_atualiza,frequencia,observacao
+IBGE PAM 5457,base_dashboard_3,"Visão Geral, Geografia da Produção, Distribuição Territorial",automática (coletar_pam.py + atualizar_pam.py),mensal (a PAM sai uma vez por ano),só entram anos mais novos; revisões do IBGE vão para o relatório e não são aplicadas
+Redape publicações,autores,Café na Embrapa,automática (coletar_redape.py + atualizar_autores.py),mensal (Redape publica no dia 1º),só entram publicações novas; dados do autor vêm da tabela atual ou de dados/embrapa/pessoas_autoria.csv
+IBGE Censo Agro 2017 6955,estabelecimentos2,Estabelecimentos Agrícolas,não atualiza,—,Censo 2017 é fixo; próximo Censo muda a estrutura
+IBGE Censo Agro 2017 6768/6755/6775,"dados_socioeconomicos, cafe_idade_genero_long, cafe_socio_prod_municipio",Dados Socioeconômicos,não atualiza,—,ficam com a PAM 2017 para casar com o Censo
+MAPA ZARC,"zarc, zarc_janela",Zarc,manual por enquanto,quando sair portaria nova do café,arquivo do MAPA tem ~580 MB e muda todo dia; falta o script original
+Planilhas Google de soluções tecnológicas,—,Café na Embrapa,manual,—,o Looker lê direto da planilha

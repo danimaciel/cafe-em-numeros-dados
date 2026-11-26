@@ -1,0 +1,9 @@
+# exportações brutas do Redape (≈220 MB por mês): só o registro do que foi coletado vai para o git
+dados/redape/*/
+dados/ibge/*.tmp.gz
+dados/bigquery/*.novo.*
+__pycache__/
+.Rhistory
+# repositório público: a tabela de autores tem nome e matrícula de empregados; vem do BigQuery a cada execução
+dados/bigquery/autores*.parquet
+dados/embrapa/

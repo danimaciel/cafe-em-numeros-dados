@@ -1,0 +1,922 @@
+<title>Café em Números</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..800&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&display=swap">
+<style>
+/* Layout: uma página contínua em capítulos (história do grão: safra → território → quem produz → clima → pesquisa).
+   Abertura escura com o mapa de pontos dos municípios; navegação e filtros fixos; assistente em gaveta lateral. */
+:root{
+  --bg:#f4f4f1; --surface:#ffffff; --line:#dedbd5; --ink:#1f1712; --muted:#6c625b;
+  --roast:#1d120c; --roast-2:#2c1c13; --roast-ink:#f3ebe4; --roast-muted:#b9a99d;
+  --arabica:#a3361f; --canephora:#2f7d4a; --gold:#c08a2a; --soft:#ece9e3;
+  --risk1:#b42318; --risk2:#2f9e4f; --risk3:#d9944a; --risk4:#8e2a6b;
+  --focus:#c08a2a;
+  --f-display:"Archivo",system-ui,sans-serif; --f-body:"Source Sans 3",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#141210; --surface:#1d1a17; --line:#35302b; --ink:#efe9e3; --muted:#ada298;
+  --arabica:#e0714f; --canephora:#5fbf7c; --gold:#e0ac4c; --soft:#27231f;
+  --risk1:#e5534b; --risk2:#4cc06c; --risk3:#e6a462; --risk4:#c45a9d; --focus:#e0ac4c; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#141210; --surface:#1d1a17; --line:#35302b; --ink:#efe9e3; --muted:#ada298;
+  --arabica:#e0714f; --canephora:#5fbf7c; --gold:#e0ac4c; --soft:#27231f;
+  --risk1:#e5534b; --risk2:#4cc06c; --risk3:#e6a462; --risk4:#c45a9d; --focus:#e0ac4c; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16.5px;line-height:1.55}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2,h3,h4{font-family:var(--f-display);margin:0;text-wrap:balance}
+a{color:inherit}
+button,select,input{font:inherit}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.num{font-variant-numeric:tabular-nums}
+.ar{color:var(--arabica)} .cn{color:var(--canephora)}
+/* ---------- abertura ---------- */
+.hero{background:var(--roast);color:var(--roast-ink);padding-top:28px;border-top:1px solid #3d281c}
+.hero .wrap{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:24px 40px;align-items:center;padding-block:0 32px}
+.brand{font-family:var(--f-display);font-weight:700;font-stretch:115%;letter-spacing:.02em;text-transform:uppercase;font-size:.8rem;color:var(--gold)}
+.hero h1{font-size:clamp(2.6rem,6.5vw,5.2rem);font-weight:800;font-stretch:80%;line-height:.95;letter-spacing:-.01em;margin:10px 0 14px}
+.hero h1 small{display:block;font-size:.36em;font-weight:500;font-stretch:100%;letter-spacing:0;color:var(--roast-muted);margin-top:10px;line-height:1.25}
+.hero p.lead{color:var(--roast-muted);max-width:46ch;margin:0 0 20px}
+.hero p.lead b{color:var(--roast-ink);font-weight:600}
+.askbox{display:flex;gap:8px;flex-wrap:wrap;background:var(--roast-2);border:1px solid #4a3326;border-radius:12px;padding:8px}
+.askbox input{flex:1 1 220px;min-width:0;background:transparent;border:0;color:var(--roast-ink);padding:8px 10px;font-size:1rem}
+.askbox input::placeholder{color:var(--roast-muted)}
+.askbox button{border:0;border-radius:8px;background:var(--gold);color:#1d120c;font-weight:600;padding:8px 16px;cursor:pointer}
+.sugs{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.sugs button{background:transparent;border:1px solid #4a3326;color:var(--roast-muted);border-radius:99px;padding:3px 10px;font-size:.85rem;cursor:pointer}
+.sugs button:hover{color:var(--roast-ink);border-color:var(--gold)}
+#heromap svg{display:block;width:100%;height:auto}
+.heroleg{display:flex;gap:16px;font-size:.82rem;color:var(--roast-muted);justify-content:flex-end;flex-wrap:wrap}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:middle}
+/* ---------- navegação ---------- */
+.nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--roast);color:var(--roast-ink)}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--roast)}
+.nav .wrap{display:flex;gap:6px 18px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding-block:8px}
+.brandlink{font-family:var(--f-display);font-weight:800;font-stretch:85%;font-size:1.15rem;text-decoration:none;color:var(--roast-ink);white-space:nowrap}
+.chap{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;min-width:0;flex:1 1 420px}
+.chap a{white-space:nowrap;text-decoration:none;padding:8px 11px;border-radius:7px;font-size:.93rem;color:var(--roast-muted);border-bottom:2px solid transparent}
+.chap a.on{color:var(--roast-ink);font-weight:600;border-bottom-color:var(--gold);border-radius:7px 7px 0 0;background:var(--roast-2)}
+.chap a:hover{color:var(--roast-ink)}
+.flt{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.flt label{font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;color:var(--roast-muted);display:flex;align-items:center;gap:6px}
+.flt select,.flt input{background:var(--roast-2);color:var(--roast-ink);border:1px solid #4a3326;border-radius:7px;padding:5px 8px;font-size:.92rem;text-transform:none;letter-spacing:0;max-width:100%}
+.flt input{width:13rem}
+.flt input::placeholder{color:var(--roast-muted)}
+.fbar{display:flex;gap:8px 18px;flex-wrap:wrap;justify-content:space-between;padding-block:0 10px}
+.clr{border:1px solid #4a3326;background:transparent;color:var(--gold);border-radius:7px;padding:5px 10px;cursor:pointer;font-size:.88rem}
+.tbanner{background:var(--soft);border-bottom:1px solid var(--line);font-size:.9rem;color:var(--muted)}
+.tbanner .wrap{padding-block:8px}
+.tbanner b{color:var(--ink)}
+@media (max-width:700px){.nav{position:static}.fbar{flex-direction:column}.flt{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%}.flt label{flex-direction:column;align-items:stretch;gap:3px;min-width:0}.flt select,.flt input{width:100%;min-width:0}.flt label[for=f-mun]{grid-column:1/-1}.flt .clr{grid-column:1/-1;justify-self:start}}
+select{background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:7px;padding:5px 8px;font-size:.92rem}
+/* ---------- capítulos ---------- */
+section.ch{padding-block:40px 8px}
+.chhead{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:8px 40px;align-items:end;margin-bottom:24px}
+.eyebrow{font-family:var(--f-display);font-stretch:115%;text-transform:uppercase;letter-spacing:.09em;font-size:.75rem;font-weight:700;color:var(--gold)}
+.chhead h2{font-size:clamp(1.8rem,3.6vw,2.7rem);font-weight:750;font-stretch:85%;line-height:1.02;margin-top:6px}
+.chhead p{margin:0;color:var(--muted);max-width:60ch}
+.chhead p b{color:var(--ink)}
+.src{font-size:.8rem;color:var(--muted)}
+.grid{display:grid;gap:16px}
+.g2{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.g64{grid-template-columns:minmax(0,1.5fr) minmax(0,1fr)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;min-width:0}
+.card h3{font-size:1.02rem;font-weight:650;margin-bottom:2px}
+.card .note{color:var(--muted);font-size:.86rem;margin:0 0 12px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:0;border-top:2px solid var(--ink);margin-bottom:18px}
+.stat{padding:12px 14px 12px 0;display:grid;gap:0}
+.stat .l{font-size:.78rem;color:var(--muted)}
+.stat .v{font-family:var(--f-display);font-weight:700;font-stretch:90%;font-size:clamp(1.45rem,2.6vw,1.95rem);font-variant-numeric:tabular-nums;line-height:1.15}
+.stat .s{font-size:.8rem;color:var(--muted)}
+.pill{display:inline-block;font-size:.7rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;padding:2px 8px;border-radius:99px;background:var(--soft);color:var(--muted);vertical-align:middle}
+.pill.new{background:var(--canephora);color:var(--surface)}
+.pill.warn{background:var(--gold);color:#1d120c}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.85rem;color:var(--muted);margin-bottom:6px}
+.seg{display:inline-flex;flex-wrap:wrap;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{border:0;background:transparent;color:var(--ink);padding:5px 11px;font-size:.86rem;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--surface)}
+.row{display:flex;gap:8px 14px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin-bottom:8px}
+svg text{fill:var(--muted);font-family:var(--f-body);font-size:12px}
+svg .axis{stroke:var(--line)}
+.chart{position:relative;min-width:0}
+/* barras */
+.bars{display:grid;gap:7px}
+.bar{display:grid;grid-template-columns:minmax(90px,34%) minmax(0,1fr) auto;gap:10px;align-items:center;font-size:.9rem}
+.bar .lab{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar .trk{height:12px;background:var(--soft);border-radius:3px;overflow:hidden;display:flex}
+.bar .trk i{display:block;height:100%}
+.bar .val{font-variant-numeric:tabular-nums;color:var(--muted);font-size:.85rem;min-width:4.5em;text-align:right}
+.bar.clk{cursor:pointer} .bar.clk:hover .lab{text-decoration:underline}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:.9rem}
+th,td{padding:6px 6px;border-bottom:1px solid var(--line);text-align:right;vertical-align:top}
+th:first-child,td:first-child{text-align:left}
+th{font-weight:600;font-size:.74rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.scroll{overflow-x:auto}
+.dict{font-size:.84rem;color:var(--muted);display:grid;gap:2px;margin-top:10px}
+.dict b{color:var(--ink);font-weight:600}
+#tip{position:fixed;z-index:60;pointer-events:none;background:var(--ink);color:var(--bg);font-size:.82rem;padding:6px 9px;border-radius:6px;max-width:280px;font-variant-numeric:tabular-nums;box-shadow:0 4px 14px rgba(0,0,0,.2)}
+.big{font-family:var(--f-display);font-weight:800;font-stretch:80%;font-size:clamp(3rem,7vw,5rem);line-height:.95}
+.kw{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:baseline}
+.kw span{line-height:1.1;color:var(--ink)}
+.clusters{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+.cl{border-top:3px solid var(--ink);padding-top:8px;display:grid;gap:2px;cursor:pointer;background:none;border-left:0;border-right:0;border-bottom:0;text-align:left;color:var(--ink)}
+.cl b{font-family:var(--f-display);font-size:1.5rem;font-stretch:90%}
+.cl span{font-size:.86rem;color:var(--muted)}
+.cl{border-radius:0 0 8px 8px;padding:8px 8px 6px;transition:background .15s}.cl:hover{background:var(--bg-2,rgba(0,0,0,.04))}.cl[aria-pressed="true"]{border-top-color:var(--arabica);background:var(--arabica);color:#fff}.cl[aria-pressed="true"] span{color:#fff}
+.techs{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
+.tech{border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:grid;gap:4px;font-size:.88rem;text-decoration:none;background:var(--surface)}
+.tech:hover{border-color:var(--gold)}
+.tech b{font-weight:600;line-height:1.3}
+.tech span{color:var(--muted);font-size:.8rem}
+.search{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.search select{flex:1 1 160px;min-width:0;max-width:100%}
+.search input{flex:1 1 220px;min-width:0;padding:7px 10px;border:1px solid var(--line);border-radius:7px;background:var(--bg);color:var(--ink)}
+.publist{display:grid;gap:0}
+.pub{padding:9px 0;border-bottom:1px solid var(--line);display:grid;gap:2px;font-size:.92rem}
+.pub a{text-decoration:none;font-weight:600} .pub a:hover{text-decoration:underline}
+.pub span{color:var(--muted);font-size:.82rem}
+.more{margin-top:10px;border:1px solid var(--line);background:transparent;color:var(--ink);border-radius:7px;padding:6px 12px;cursor:pointer}
+.callout{border-left:3px solid var(--gold);padding:4px 0 4px 14px;color:var(--muted);font-size:.92rem;max-width:75ch}
+.weeks{display:grid;grid-template-columns:repeat(36,minmax(0,1fr));gap:2px;height:180px;align-items:end}
+.weeks div{display:flex;flex-direction:column-reverse;height:100%;border-radius:2px;overflow:hidden}
+.weeks i{display:block;width:100%}
+.wkax{display:grid;grid-template-columns:repeat(36,minmax(0,1fr));gap:2px;font-size:.7rem;color:var(--muted);text-align:center;margin-top:4px}
+.sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:middle}
+footer{padding-block:48px 40px;color:var(--muted);font-size:.86rem}
+footer .wrap{display:grid;gap:8px;border-top:1px solid var(--line);padding-top:20px}
+/* ---------- assistente ---------- */
+.fab{position:fixed;right:calc(16px + env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:40;border:0;border-radius:99px;background:var(--roast);color:var(--roast-ink);padding:11px 18px;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.25);cursor:pointer;display:flex;gap:8px;align-items:center}
+.fab i{width:8px;height:8px;border-radius:50%;background:var(--gold);display:block}
+.ans b{font-weight:600}.ans ul{margin:6px 0 0;padding-left:18px}.ans .go{margin-top:8px;display:inline-block;border:1px solid var(--line);border-radius:7px;padding:3px 10px;font-size:.85rem;text-decoration:none;color:var(--ink)}.ans .src{display:block;margin-top:6px}
+.sugs.light button{color:var(--muted);border-color:var(--line)}.sugs.light button:hover{color:var(--ink)}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(440px,100%);z-index:50;background:var(--surface);border-left:1px solid var(--line);box-shadow:-8px 0 30px rgba(0,0,0,.18);display:flex;flex-direction:column;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);padding-right:env(safe-area-inset-right,0px)}
+.drawer header{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line)}
+.drawer header h3{font-size:1.05rem}
+.drawer .x{border:0;background:transparent;color:var(--ink);font-size:1.4rem;cursor:pointer;line-height:1}
+.convo{flex:1;overflow-y:auto;padding:14px 16px;display:grid;gap:12px;align-content:start}
+.msg{white-space:pre-wrap;font-size:.95rem}
+.msg.q{background:var(--soft);border-radius:10px;padding:8px 12px;justify-self:end;max-width:90%}
+.msg.a{border-left:3px solid var(--gold);padding-left:12px}
+.msg.a.wait{color:var(--muted)}
+.drawer form{display:flex;gap:8px;padding:12px 16px;border-top:1px solid var(--line)}
+.drawer form input{flex:1;min-width:0;padding:9px 11px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+.drawer form button{border:0;border-radius:8px;background:var(--roast);color:var(--roast-ink);font-weight:600;padding:9px 14px;cursor:pointer}
+.drawer .hint{font-size:.8rem;color:var(--muted);padding:0 16px 10px}
+@media (max-width:900px){.hero .wrap,.chhead,.g2,.g64{grid-template-columns:minmax(0,1fr)}.g3{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:560px){.weeks{height:140px}.wkax span:nth-child(even){visibility:hidden}.bar{grid-template-columns:minmax(80px,38%) minmax(0,1fr) auto}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
+
+<nav class="nav" aria-label="Páginas do painel"><div class="wrap">
+  <a class="brandlink" href="#visao">Café em Números</a>
+  <div class="chap" id="chap"><a href="#visao">Visão geral</a><a href="#territorio">Território</a><a href="#estabelecimentos">Estabelecimentos</a><a href="#produtores">Produtores</a><a href="#clima">Clima (ZARC)</a><a href="#pesquisa">Café na Embrapa</a></div>
+</div>
+<div class="wrap fbar">
+  <div class="flt">
+    <label for="f-reg">Região <select id="f-reg"><option value="">Todas</option></select></label>
+    <label for="f-uf">Estado <select id="f-uf"><option value="">Todos</option></select></label>
+    <label for="f-mun">Município <input id="f-mun" list="mun-list" placeholder="Todos" autocomplete="off"><datalist id="mun-list"></datalist></label>
+    <button type="button" id="f-clear" class="clr" hidden>Limpar</button>
+  </div>
+  <div class="flt" id="flt">
+    <label for="f-ano">Ano <select id="f-ano"></select></label>
+    <label for="f-tipo">Café <select id="f-tipo"><option>Total</option><option>Arábica</option><option>Canephora</option></select></label>
+  </div>
+</div></nav>
+<div class="tbanner" id="tbanner" hidden><div class="wrap" id="tbanner-t"></div></div>
+
+<div class="hero" data-page="visao"><div class="wrap">
+  <div>
+    <div class="brand" id="h-brand">Café em Números · Brasil</div>
+    <h1 id="h-num">– <small id="h-sub">milhões de sacas</small></h1>
+    <p class="lead" id="h-lead">Carregando os dados…</p>
+    <form class="askbox" id="hero-ask"><input id="hero-q" type="text" placeholder="Pergunte aos dados. Ex.: quanto Rondônia produziu em 2025?" autocomplete="off" aria-label="Pergunta para o assistente"><button type="submit">Perguntar</button></form>
+    <div class="sugs" id="hero-sugs">
+      <button type="button">Qual estado mais cresceu em canephora desde 2014?</button>
+      <button type="button">Quantos estabelecimentos familiares produzem café em MG?</button>
+      <button type="button">Quantas publicações da Embrapa tratam de ferrugem?</button>
+    </div>
+  </div>
+  <div>
+    <div id="heromap" aria-label="Mapa de pontos dos municípios produtores"></div>
+    <div class="heroleg"><span><i class="dot" style="background:#e0714f"></i>Arábica</span><span><i class="dot" style="background:#5fbf7c"></i>Canephora</span><span id="h-munis"></span></div>
+  </div>
+</div></div>
+
+
+
+<main>
+<!-- 1. SAFRA -->
+<section class="ch" id="s-safra" data-page="visao"><div class="wrap">
+  <div class="chhead">
+    <div><div class="eyebrow">1 · A safra</div><h2>Doze safras de café, ano a ano</h2></div>
+    <p id="safra-txt"></p>
+  </div>
+  <div class="stats" id="safra-stats"></div>
+  <div class="grid g64">
+    <div class="card">
+      <div class="row"><div><h3>Produção por espécie</h3><p class="note" style="margin:0">Milhões de sacas de 60 kg. Clique num ano para filtrar a página.</p></div>
+      <div class="legend" style="margin:0"><span><i class="sw" style="background:var(--arabica)"></i>Arábica</span><span><i class="sw" style="background:var(--canephora)"></i>Canephora</span></div></div>
+      <div class="chart" id="c-prod"></div>
+    </div>
+    <div class="grid">
+      <div class="card"><h3>Produtividade</h3><p class="note">Sacas por hectare colhido</p><div class="chart" id="c-yield"></div></div>
+      <div class="card"><h3>Valor da produção</h3><p class="note">R$ bilhões correntes</p><div class="chart" id="c-valor"></div></div>
+    </div>
+  </div>
+  <p class="src" style="margin-top:10px">IBGE/SIDRA, Produção Agrícola Municipal, Tabela 5457. Área colhida, área plantada, quantidade, rendimento e valor da produção.</p>
+</div></section>
+
+<!-- 2. TERRITÓRIO -->
+<section class="ch" id="s-territorio" data-page="territorio"><div class="wrap">
+  <div class="chhead">
+    <div><div class="eyebrow">2 · O território</div><h2>Onde o café é colhido</h2></div>
+    <p id="terr-txt"></p>
+  </div>
+  <div class="grid g64">
+    <div class="card">
+      <div class="row">
+        <div class="seg" id="m-mode" role="group" aria-label="Camada do mapa"><button data-v="uf" aria-pressed="true">Estados</button><button data-v="mun" aria-pressed="false">Municípios</button></div>
+        <div class="seg" id="m-ind" role="group" aria-label="Indicador"><button data-v="prod" aria-pressed="true">Produção</button><button data-v="valor" aria-pressed="false">Valor</button><button data-v="area" aria-pressed="false">Área</button><button data-v="yield" aria-pressed="false">Produtividade</button></div>
+      </div>
+      <div class="chart" id="c-map"></div>
+      <div class="legend" id="map-leg" style="margin-top:6px"></div>
+    </div>
+    <div class="grid">
+      <div class="card"><h3 id="rank-h">Dez maiores estados</h3><p class="note" id="rank-n"></p><div class="bars" id="c-rank"></div></div>
+      <div class="card"><h3>Por região</h3><p class="note" id="reg-n"></p><div class="bars" id="c-reg"></div></div>
+    </div>
+  </div>
+  <div class="grid g2" style="margin-top:16px">
+    <div class="card">
+      <div class="row"><h3 id="det-h">Detalhamento da produção</h3></div>
+      <div class="scroll"><table id="t-det"></table></div>
+      <div class="dict">
+        <div><b>Valor da produção</b>: valor bruto da produção de café (mil R$).</div>
+        <div><b>Quantidade produzida</b>: volume total produzido (t; sacas = t × 1.000 ÷ 60).</div>
+        <div><b>Área plantada / colhida</b>: área cultivada / efetivamente colhida (ha).</div>
+        <div><b>Rendimento médio</b>: produtividade (kg/ha e sc/ha).</div>
+        <div><b>Participação</b>: peso do café na área plantada, colhida e no valor da produção agrícola do local (%).</div>
+      </div>
+    </div>
+    <div class="card">
+      <h3 id="mun-h">Municípios</h3><p class="note" id="mun-n"></p>
+      <div id="mun-out"></div>
+    </div>
+  </div>
+</div></section>
+
+<!-- 3. ESTABELECIMENTOS -->
+<section class="ch" id="s-estabelecimentos" data-page="estabelecimentos"><div class="wrap">
+  <div class="chhead">
+    <div><div class="eyebrow">3 · Quem produz</div><h2 id="est-title">Estabelecimentos com café</h2></div>
+    <p>Retrato do <b>Censo Agropecuário 2017</b> (IBGE, Tabela 6955): estabelecimentos com café arábica e canephora, agricultura familiar e não familiar, por estado e município.</p>
+  </div>
+  <div class="stats" id="est-stats"></div>
+  <div class="grid g2">
+    <div class="card">
+      <div class="row"><h3 id="est-h1">Perfil por estado</h3><div class="seg" id="est-mode" role="group" aria-label="Perfil"><button data-v="sp" aria-pressed="true">Espécie</button><button data-v="fam" aria-pressed="false">Familiar</button></div></div>
+      <div class="legend" id="est-leg"></div>
+      <div class="bars" id="c-estuf"></div>
+    </div>
+    <div class="card">
+      <h3>Estabelecimentos × produção</h3><p class="note" id="sc-note"></p>
+      <div class="chart" id="c-scatter"></div>
+    </div>
+  </div>
+  <div class="grid g2" style="margin-top:16px">
+    <div class="card"><h3>Municípios com mais estabelecimentos</h3><p class="note" id="estmun-n">Arábica e canephora</p><div class="bars" id="c-estmun"></div></div>
+    <div class="card"><h3 id="est-h2">Estabelecimentos e produção por estado</h3><div class="scroll"><table id="t-est"></table></div></div>
+  </div>
+</div></section>
+
+<!-- 4. PRODUTORES -->
+<section class="ch" id="s-produtores" data-page="produtores"><div class="wrap">
+  <div class="chhead">
+    <div><div class="eyebrow">4 · Quem são os produtores</div><h2>Gênero, idade e sucessão no campo</h2></div>
+    <p>Produtores dos municípios que têm estabelecimentos de café, segundo o <b>Censo Agropecuário 2017</b> (Tabela 6768). A participação feminina por espécie é uma estimativa: a proporção de mulheres do município aplicada aos estabelecimentos de café.</p>
+  </div>
+  <div class="stats" id="soc-stats"></div>
+  <div class="grid g64">
+    <div class="card"><h3>Pirâmide etária dos produtores</h3><p class="note" id="pyr-n">Homens à esquerda, mulheres à direita</p><div class="chart" id="c-pyr"></div></div>
+    <div class="card">
+      <h3>Índice de envelhecimento</h3><p class="note">Produtores com 65 anos ou mais para cada produtor com menos de 25 anos</p>
+      <div class="big num" id="env-big">–</div>
+      <p class="src" style="margin:4px 0 14px">Valores mais altos indicam estrutura mais envelhecida e desafios de sucessão geracional.</p>
+      <div class="bars" id="c-env"></div>
+    </div>
+  </div>
+  <div class="grid g2" style="margin-top:16px">
+    <div class="card"><h3>Participação feminina estimada nos territórios cafeeiros</h3><p class="note" id="wmap-n">Estabelecimentos de café dirigidos por mulheres (estimativa), por estado</p><div class="chart" id="c-wmap"></div><div class="legend" id="wmap-leg"></div></div>
+    <div class="card"><h3>Mulheres por espécie</h3><p class="note">Estimativa de estabelecimentos com mulheres à frente</p><div id="w-sp"></div></div>
+  </div>
+</div></section>
+
+<!-- 5. CLIMA -->
+<section class="ch" id="s-clima" data-page="clima"><div class="wrap">
+  <div class="chhead">
+    <div><div class="eyebrow">5 · Clima e risco</div><h2>Quando o clima favorece o plantio</h2></div>
+    <p>O <b>Zoneamento Agrícola de Risco Climático (ZARC)</b>, do Ministério da Agricultura com apoio técnico da Embrapa, usa séries de clima, solos e exigências da cultura para indicar períodos e locais de menor risco. <span class="pill warn">valores aproximados no protótipo</span></p>
+  </div>
+  <div class="card">
+    <h3>Classe de risco ao longo das 36 semanas do ano</h3><p class="note">Percentual das combinações município × solo × fase em cada classe, por semana (decêndio do ZARC)</p>
+    <div class="legend"><span><i class="sw" style="background:var(--risk1)"></i>Não recomendado</span><span><i class="sw" style="background:var(--risk2)"></i>Baixo risco (20%)</span><span><i class="sw" style="background:var(--risk3)"></i>Médio</span><span><i class="sw" style="background:var(--risk4)"></i>Alto</span></div>
+    <div class="weeks" id="c-weeks"></div><div class="wkax" id="c-wkax"></div>
+  </div>
+  <div class="grid g3" style="margin-top:16px">
+    <div class="card"><h3>Semanas de baixo risco</h3><p class="note">Média por espécie</p><div id="z-med"></div></div>
+    <div class="card"><h3>Janelas climáticas favoráveis</h3><p class="note">Distribuição das combinações por tipo de janela</p><div class="bars" id="c-jan"></div></div>
+    <div class="card"><h3>Duração das janelas</h3><p class="note">Mil combinações por número de semanas de baixo risco</p><div class="bars" id="c-dur"></div></div>
+  </div>
+  <p class="callout" style="margin-top:16px">Os resultados do ZARC consideram manejo adequado e não incorporam limitações de fertilidade do solo, pragas, doenças ou práticas de cultivo. Use como apoio à decisão, não como garantia de produtividade. Na versão final, este capítulo traz também o mapa municipal de baixo risco, o mapa das janelas e a consulta às <span id="z-comb"></span> combinações (município, solo, fase, janela).</p>
+</div></section>
+
+<!-- 6. PESQUISA -->
+<section class="ch" id="s-pesquisa" data-page="pesquisa"><div class="wrap">
+  <div class="chhead">
+    <div><div class="eyebrow">6 · Café na Embrapa</div><h2>A ciência por trás de cada saca</h2></div>
+    <p>Publicações e soluções tecnológicas da Embrapa sobre café, do Repositório de Dados da Embrapa (Redape), com autores identificados e temas agrupados por similaridade de texto.</p>
+  </div>
+  <div class="stats" id="pes-stats"></div>
+  <div class="grid g64">
+    <div class="card"><h3>Publicações por ano</h3><p class="note emb-sel" style="color:var(--arabica);font-weight:600;margin:0"></p><p class="note">Linhas verticais marcam as décadas</p><div class="chart" id="c-pubano"></div></div>
+    <div class="card"><h3>Autores da Embrapa por gênero</h3><p class="note">Pessoas distintas, gênero estimado pelo primeiro nome</p><div id="c-gen"></div><h3 style="margin-top:16px">Tipo de publicação</h3><div class="bars" id="c-tipo" style="margin-top:8px"></div></div>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <h3>Seis grandes temas</h3><p class="note">Clique num tema para filtrar os gráficos e a lista de publicações. Clique de novo para ver todos.</p>
+    <div class="clusters" id="c-cl"></div>
+  </div>
+  <div class="grid g2" style="margin-top:16px">
+    <div class="card"><h3>Publicações por unidade</h3><p class="note emb-sel" style="color:var(--arabica);font-weight:600;margin:0"></p><div class="bars" id="c-uni" style="margin-top:8px"></div></div>
+    <div class="card"><h3>Autores com mais publicações</h3><p class="note emb-sel" style="color:var(--arabica);font-weight:600;margin:0"></p><div class="bars" id="c-aut" style="margin-top:8px"></div></div>
+  </div>
+  <div class="card" style="margin-top:16px"><h3>Palavras-chave mais frequentes</h3><p class="note emb-sel" style="color:var(--arabica);font-weight:600;margin:0"></p><p class="note">Clique para buscar</p><div class="kw" id="c-kw"></div></div>
+  <div class="card" style="margin-top:16px">
+    <h3>Publicações</h3>
+    <div class="search" style="margin-top:8px">
+      <input id="p-q" type="search" placeholder="Buscar assunto, título ou autor" aria-label="Buscar publicações">
+      <select id="p-uni" aria-label="Unidade"><option value="">Todas as unidades</option></select>
+      <select id="p-cl" aria-label="Tema"><option value="">Todos os temas</option></select>
+    </div>
+    <p class="note" id="p-count"></p>
+    <div class="publist" id="p-list"></div>
+    <button class="more" id="p-more" type="button">Mostrar mais</button>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <h3>Soluções tecnológicas</h3><p class="note" id="tech-n"></p>
+    <div class="bars" id="c-techtipo" style="margin-bottom:14px"></div>
+    <div class="techs" id="c-tech"></div>
+  </div>
+</div></section>
+</main>
+
+<footer><div class="wrap">
+  <div><b>Fontes:</b> IBGE/SIDRA (PAM, Tabela 5457; Censo Agropecuário 2017, Tabelas 6955 e 6768); MAPA/ZARC; Embrapa (Redape e base de autores).</div>
+  <div>Protótipo de página própria do painel Café em Números. No protótipo, 2014–2024 da PAM usam os valores anteriores à revisão do IBGE de outubro de 2026 e 2025 vem da carga de teste; o ZARC usa valores aproximados.</div>
+  <div id="f-upd"></div>
+</div></footer>
+
+<button class="fab" id="fab" type="button"><i></i>Pergunte aos dados</button>
+<aside class="drawer" id="drawer" hidden aria-label="Assistente">
+  <header><h3>Pergunte aos dados</h3><button class="x" id="d-x" type="button" aria-label="Fechar">×</button></header>
+  <div class="convo" id="convo"><div class="msg a">Pergunte sobre produção, área, valor, produtividade, estabelecimentos, produtores, clima ou publicações. As respostas saem direto dos dados do painel, com a fonte de cada número.</div></div>
+  <div class="hint">Assistente próprio do painel, sem inteligência artificial paga: entende perguntas por palavras-chave e sinônimos.</div>
+  <form id="d-form"><input id="d-q" type="text" placeholder="Sua pergunta" autocomplete="off" aria-label="Sua pergunta"><button type="submit">Enviar</button></form>
+</aside>
+<div id="tip" hidden></div>
+
+<script>
+
+(async function(){
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const nf=(v,d=0)=>Number(v).toLocaleString('pt-BR',{minimumFractionDigits:d,maximumFractionDigits:d});
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const norm=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+const sacas=t=>t*1000/60;
+const big=v=>v>=1e9?nf(v/1e9,1)+' bi':v>=1e6?nf(v/1e6,1)+' mi':v>=1e3?nf(v/1e3,1)+' mil':nf(v);
+const sc=v=>v>=1e6?nf(v/1e6,2)+' mi sacas':nf(v)+' sacas';
+const tip=$('#tip');
+function showTip(e,html){tip.innerHTML=html;tip.hidden=false;const w=tip.offsetWidth,h=tip.offsetHeight;
+  tip.style.left=Math.max(8,Math.min(innerWidth-w-8,e.clientX-w/2))+'px';tip.style.top=Math.max(8,e.clientY-h-12)+'px';}
+const hideTip=()=>tip.hidden=true;
+const J=f=>fetch('dados/'+f).then(r=>r.json());
+const [pam,geo,mj,zarc,emb]=await Promise.all(['pam_uf.json','uf.geojson','mun.json','zarc.json','embrapa.json'].map(J));
+fetch('dados/meta.json').then(r=>r.ok?r.json():null).then(m=>{if(!m)return;const f=m.fontes||{};$('#f-upd').innerHTML='<b>Última atualização dos dados:</b> '+esc(m.atualizado_em||'')+(Object.keys(f).length?' · '+Object.entries(f).map(([k,v])=>esc(k)+': '+esc(v)).join(' · '):'');}).catch(()=>{});
+const D=pam.dados, YEARS=Object.keys(D).map(Number).sort((a,b)=>a-b), Y0=YEARS[0], Y1=YEARS.at(-1);
+const IX={prod:0,area:1,valor:2,plant:3,pap:4,pac:5,pvp:6};
+const feats=geo.features, UF=feats.map(f=>f.properties.uf), SIG={}; feats.forEach(f=>SIG[f.properties.uf]=f.properties.sigla);
+const NAME=Object.fromEntries(Object.entries(SIG).map(([n,s])=>[s,n]));
+const REG={Norte:['RO','AC','AM','RR','PA','AP','TO'],Nordeste:['MA','PI','CE','RN','PB','PE','AL','SE','BA'],Sudeste:['MG','ES','RJ','SP'],Sul:['PR','SC','RS'],'Centro-Oeste':['MS','MT','GO','DF']};
+const S2R={};Object.entries(REG).forEach(([r,l])=>l.forEach(s=>S2R[s]=r));
+const MUN=mj.mun;MUN.forEach(m=>{m.reg=S2R[m.uf];m.k=norm(m.n);m.lab=`${m.n} (${m.uf})`;});
+const st={ano:'all',tipo:'Total',mode:'uf',ind:'prod'};
+const terr={reg:'',uf:'',mun:null};
+
+/* ---------- acesso aos dados por território ---------- */
+function get(y,loc,tipo,k){const r=D[y]?.[loc];if(!r)return 0;const i=IX[k];return tipo==='Total'?(r['Arábica']?.[i]||0)+(r['Canephora']?.[i]||0):(r[tipo]?.[i]||0);}
+const MK={prod:'q',area:'h',plant:'l',valor:'v',pap:'pl',pac:'ph',pvp:'pv'};
+function munV(m,y,tipo,k){const i=mj.anos.indexOf(y);if(i<0||!m.p)return 0;const f=pre=>(m.p[pre+MK[k]]||[])[i]||0;return tipo==='Total'?f('a')+f('c'):f(tipo==='Arábica'?'a':'c');}
+function pamT(y,tipo,k,T=terr){
+  if(T.mun)return munV(T.mun,y,tipo,k);
+  if(T.uf)return get(y,NAME[T.uf],tipo,k);
+  if(T.reg){if(k[0]==='p'&&k!=='prod'&&k!=='plant')return NaN;return REG[T.reg].reduce((s,x)=>s+get(y,NAME[x],tipo,k),0);}
+  return get(y,'Brasil',tipo,k);}
+const yrs=()=>st.ano==='all'?YEARS:[+st.ano];
+const aggT=(tipo,k,T=terr)=>yrs().reduce((s,y)=>s+pamT(y,tipo,k,T),0);
+function metricT(tipo,ind,T=terr){if(ind==='yield'){const a=aggT(tipo,'area',T);return a?sacas(aggT(tipo,'prod',T))/a:0;}const v=aggT(tipo,ind,T);return ind==='prod'?sacas(v):v;}
+const metricUF=(n,tipo,ind)=>metricT(tipo,ind,{uf:SIG[n]});
+const metricM=(m,tipo,ind)=>metricT(tipo,ind,{mun:m});
+function tLabel(T=terr){return T.mun?T.mun.lab:T.uf?NAME[T.uf]:T.reg?`Região ${T.reg}`:'Brasil';}
+const ART_M=new Set(['AC','AP','AM','CE','ES','MA','MT','MS','PA','PR','PI','RJ','RN','RS','TO','DF']),ART_F=new Set(['BA','PB']);
+const artUF=u=>ART_M.has(u)?'o':ART_F.has(u)?'a':'';
+const emN=T=>T.mun?'em '+esc(T.mun.lab):T.uf?({o:'no ',a:'na ','':'em '})[artUF(T.uf)]+esc(NAME[T.uf]):T.reg?`na região ${T.reg}`:'no Brasil';
+const deN=T=>T.mun?'de '+esc(T.mun.lab):T.uf?({o:'do ',a:'da ','':'de '})[artUF(T.uf)]+esc(NAME[T.uf]):T.reg?`da região ${T.reg}`:'do Brasil';
+const tLevel=(T=terr)=>T.mun?'mun':T.uf?'uf':T.reg?'reg':'br';
+function inT(m,T=terr){return T.mun?m===T.mun:T.uf?m.uf===T.uf:T.reg?m.reg===T.reg:true;}
+const scopeMun=(T=terr)=>MUN.filter(m=>inT(m,T));
+const scopeUF=(T=terr)=>T.uf?[T.uf]:T.reg?REG[T.reg]:Object.values(SIG);
+function estT(T=terr){const r=[0,0,0,0,0];scopeMun(T).forEach(m=>m.e&&m.e.forEach((v,i)=>r[i]+=v));return{ar:r[0],cn:r[1],fam:r[2],nfam:r[3],tot:r[4]};}
+function socT(T=terr){const o={t:0,h:0,m:0,wa:0,wc:0,a:mj.idades.map(()=>[0,0]),n:0};scopeMun(T).forEach(m=>{const s=m.s;if(!s)return;o.n++;o.t+=s.t;o.h+=s.h;o.m+=s.m;o.wa+=s.wa;o.wc+=s.wc;s.a.forEach((x,i)=>{o.a[i][0]+=x[0];o.a[i][1]+=x[1];});});
+  const old=o.a[5][0]+o.a[5][1]+o.a[6][0]+o.a[6][1],yng=o.a[0][0]+o.a[0][1];o.env=yng?old/yng:null;return o;}
+const UNIT={prod:{f:v=>sc(v)},valor:{f:v=>'R$ '+big(v*1000)},area:{f:v=>nf(v)+' ha'},yield:{f:v=>nf(v,1)+' sc/ha'}};
+const per=()=>st.ano==='all'?`de ${Y0} a ${Y1}`:`em ${st.ano}`;
+const tipoTxt=()=>st.tipo==='Total'?'arábica e canephora':st.tipo.toLowerCase();
+const stat=(l,v,s)=>`<div class="stat"><span class="l">${l}</span><span class="v">${v}</span><span class="s">${s}</span></div>`;
+
+/* ---------- mapa ---------- */
+const K=Math.cos(14*Math.PI/180);
+function bbox(fs){const B={x0:1e9,x1:-1e9,y0:1e9,y1:-1e9};fs.forEach(f=>f.geometry.coordinates.forEach(p=>p[0].forEach(([lo,la])=>{B.x0=Math.min(B.x0,lo*K);B.x1=Math.max(B.x1,lo*K);B.y0=Math.min(B.y0,-la);B.y1=Math.max(B.y1,-la);})));return B;}
+const BALL=bbox(feats);
+function proj(W,B=BALL){const pad=B===BALL?0:.04*Math.max(B.x1-B.x0,B.y1-B.y0);const b={x0:B.x0-pad,x1:B.x1+pad,y0:B.y0-pad,y1:B.y1+pad};
+  let s=W/(b.x1-b.x0),H=(b.y1-b.y0)*s;if(H>W*1.1){s=W*1.1/(b.y1-b.y0);H=W*1.1;}const ox=(W-(b.x1-b.x0)*s)/2;
+  return{sc:s,H:Math.round(H),p:(lo,la)=>[(lo*K-b.x0)*s+ox,(-la-b.y0)*s]};}
+function paths(P){return feats.map(f=>f.geometry.coordinates.map(p=>'M'+p[0].map(([a,b])=>P.p(a,b).map(v=>v.toFixed(1)).join(',')).join('L')+'Z').join(''));}
+function scopeBox(T=terr){const s=scopeUF(T);return tLevel(T)==='br'?BALL:bbox(feats.filter(f=>s.includes(f.properties.sigla)));}
+const ramp=t=>`color-mix(in oklab, var(--arabica) ${Math.round(t*100)}%, var(--soft))`;
+
+/* ---------- filtros ---------- */
+$('#f-reg').innerHTML+=Object.keys(REG).map(r=>`<option>${r}</option>`).join('');
+function fillUF(){const l=(terr.reg?REG[terr.reg]:Object.values(SIG)).slice().sort((a,b)=>NAME[a].localeCompare(NAME[b],'pt'));$('#f-uf').innerHTML='<option value="">Todos</option>'+l.map(s=>`<option value="${s}">${NAME[s]}</option>`).join('');$('#f-uf').value=terr.uf;}
+function fillMun(){$('#mun-list').innerHTML=MUN.filter(m=>(!terr.uf||m.uf===terr.uf)&&(!terr.reg||m.reg===terr.reg)).sort((a,b)=>a.n.localeCompare(b.n,'pt')).map(m=>`<option value="${esc(m.lab)}">`).join('');}
+function setTerr(T,rerender=true){terr.reg=T.reg||'';terr.uf=T.uf||'';terr.mun=T.mun||null;
+  if(terr.mun){terr.uf=terr.mun.uf;terr.reg=terr.mun.reg;}else if(terr.uf)terr.reg=S2R[terr.uf];
+  $('#f-reg').value=terr.reg;fillUF();fillMun();$('#f-mun').value=terr.mun?terr.mun.lab:'';$('#f-clear').hidden=tLevel()==='br';
+  const mm=terr.mun||terr.uf?'mun':'uf';if(st.mode!==mm){st.mode=mm;document.querySelectorAll('#m-mode button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===mm));}
+  if(rerender)R[page]();banner();}
+$('#f-reg').onchange=e=>setTerr({reg:e.target.value});
+$('#f-uf').onchange=e=>setTerr({uf:e.target.value,reg:terr.reg});
+function pickMun(){const v=norm($('#f-mun').value.trim());if(!v){if(terr.mun)setTerr({uf:terr.uf});return;}
+  const m=MUN.find(x=>norm(x.lab)===v)||MUN.find(x=>x.k===v&&(!terr.uf||x.uf===terr.uf))||MUN.find(x=>x.k===v);if(m)setTerr({mun:m});}
+$('#f-mun').addEventListener('change',pickMun);$('#f-mun').addEventListener('input',()=>{if(MUN.some(x=>x.lab===$('#f-mun').value))pickMun();});
+$('#f-clear').onclick=()=>setTerr({});
+fillUF();fillMun();
+$('#f-ano').innerHTML=`<option value="all">${Y0}–${Y1}</option>`+YEARS.slice().reverse().map(y=>`<option value="${y}">${y}</option>`).join('');
+$('#f-ano').onchange=e=>{st.ano=e.target.value;renderPam();};
+$('#f-tipo').onchange=e=>{st.tipo=e.target.value;renderPam();};
+function setSeg(id,key,cb){$$(`#${id} button`).forEach(b=>b.onclick=()=>{$$(`#${id} button`).forEach(x=>x.setAttribute('aria-pressed',x===b));key(b.dataset.v);cb();});}
+setSeg('m-mode',v=>st.mode=v,()=>mapa());
+setSeg('m-ind',v=>st.ind=v,()=>{mapa();ranking();});
+function banner(){const lv=tLevel(),b=$('#tbanner');
+  const sem={clima:'O ZARC ainda não tem recorte territorial no protótipo: os números abaixo são do Brasil. Na versão final, vêm por município do BigQuery.',pesquisa:'As publicações não têm localização geográfica; os números abaixo valem para toda a Embrapa.'}[page];
+  if(lv==='br'&&!sem){b.hidden=true;return;}
+  const tsel=page==='pesquisa'&&$('#p-cl').value?` <b>Filtrando pelo tema ${esc(CL[$('#p-cl').value])}.</b> <button type="button" class="clr" id="cl-clear">Ver todos os temas</button>`:'';
+  b.hidden=false;$('#tbanner-t').innerHTML=(lv!=='br'?`Recorte: <b>${esc(tLabel())}</b>${terr.mun?` · ${NAME[terr.uf]} · ${terr.reg}`:terr.uf?` · ${terr.reg}`:''}. `:'')+(sem?esc(sem):'')+tsel;const cc=$('#cl-clear');if(cc)cc.onclick=()=>{$('#p-cl').value='';shown=20;pesquisa();pubs();banner();};}
+
+/* ---------- gráficos genéricos ---------- */
+function lines(el,series,{H=220,fmt=v=>nf(v,1),stack=false,onPick=null,sel=null}={}){
+  const W=Math.max(280,el.clientWidth),m={l:46,r:20,t:10,b:24};
+  const xs=y=>m.l+(y-Y0)/(Y1-Y0)*(W-m.l-m.r);
+  const tops=YEARS.map((y,i)=>stack?series.reduce((s,o)=>s+o.v[i],0):Math.max(...series.map(o=>o.v[i])));
+  let max=Math.max(...tops)*1.08||1; const step=niceStep(max/4); max=Math.ceil(max/step)*step;
+  const ys=v=>H-m.b-v/max*(H-m.t-m.b);
+  let s=`<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}">`;
+  for(let v=0;v<=max+1e-9;v+=step)s+=`<line class="axis" x1="${m.l}" x2="${W-m.r}" y1="${ys(v)}" y2="${ys(v)}"/><text x="${m.l-6}" y="${ys(v)+4}" text-anchor="end">${fmt(v)}</text>`;
+  const every=W<480?3:W<700?2:1;
+  YEARS.forEach(y=>{if((Y1-y)%every===0)s+=`<text x="${xs(y)}" y="${H-6}" text-anchor="middle">${y}</text>`;});
+  if(sel)s+=`<rect x="${xs(sel)-10}" y="${m.t}" width="20" height="${H-m.t-m.b}" fill="var(--soft)"/>`;
+  if(stack){let base=YEARS.map(()=>0);series.forEach(o=>{const top=base.map((b,i)=>b+o.v[i]);
+      const d='M'+YEARS.map((y,i)=>xs(y)+','+ys(top[i])).join('L')+'L'+YEARS.slice().reverse().map((y,j)=>xs(y)+','+ys(base[YEARS.length-1-j])).join('L')+'Z';
+      s+=`<path d="${d}" fill="${o.c}" fill-opacity="${o.dim?.18:.85}"/>`;base=top;});}
+  else series.forEach(o=>{s+=`<polyline fill="none" stroke="${o.c}" stroke-width="2.2" stroke-linejoin="round" opacity="${o.dim?.25:1}" points="${YEARS.map((y,i)=>xs(y)+','+ys(o.v[i])).join(' ')}"/>`;
+      s+=`<circle cx="${xs(Y1)}" cy="${ys(o.v.at(-1))}" r="3.5" fill="${o.c}" opacity="${o.dim?.25:1}"/>`;});
+  const bw=(W-m.l-m.r)/(YEARS.length-1);
+  YEARS.forEach((y,i)=>s+=`<rect data-i="${i}" x="${xs(y)-bw/2}" y="${m.t}" width="${bw}" height="${H-m.t-m.b}" fill="transparent" style="cursor:${onPick?'pointer':'default'}"/>`);
+  el.innerHTML=s+'</svg>';
+  el.querySelectorAll('rect[data-i]').forEach(r=>{const i=+r.dataset.i;
+    r.onmousemove=e=>showTip(e,`<b>${YEARS[i]}</b><br>`+series.map(o=>`${o.n}: ${fmt(o.v[i])}`).join('<br>')+(stack?`<br>Total: ${fmt(tops[i])}`:''));
+    r.onmouseleave=hideTip; if(onPick)r.onclick=()=>onPick(YEARS[i]);});
+}
+function niceStep(x){const p=10**Math.floor(Math.log10(x||1)),n=x/p;return (n<=1?1:n<=2?2:n<=2.5?2.5:n<=5?5:10)*p;}
+function bars(el,items,{fmt=v=>nf(v),max=null,click=null}={}){
+  if(!items.length){el.innerHTML='<p class="note">Sem dados para este recorte.</p>';return;}
+  const M=max??Math.max(...items.map(i=>i.parts?i.parts.reduce((s,p)=>s+p.v,0):i.v),1);
+  el.innerHTML=items.map((it,k)=>{const parts=it.parts||[{v:it.v,c:it.c||'var(--arabica)'}];const tot=parts.reduce((s,p)=>s+p.v,0);
+    return `<div class="bar${click?' clk':''}" data-k="${k}"${it.hi?' style="font-weight:700"':''}><span class="lab" title="${esc(it.l)}">${esc(it.l)}</span><span class="trk">${parts.map(p=>`<i style="width:${p.v/M*100}%;background:${p.c}"></i>`).join('')}</span><span class="val">${esc(it.t??fmt(tot))}</span></div>`;}).join('');
+  el.querySelectorAll('.bar').forEach(b=>{const it=items[+b.dataset.k];if(it.tip){b.onmousemove=e=>showTip(e,it.tip);b.onmouseleave=hideTip;}if(click)b.onclick=()=>{hideTip();click(it);};});
+}
+
+/* ---------- visão geral ---------- */
+function hero(){
+  const t=YEARS.map(y=>pamT(y,'Total','prod')), last=t.at(-1), prev=t.at(-2), L=tLabel();
+  $('#h-brand').textContent='Café em Números · '+L;
+  if(!last){$('#h-num').innerHTML=`0 <small>sacas de café registradas ${emN(terr)} em ${Y1}</small>`;$('#h-lead').innerHTML=`A PAM não registra produção de café neste recorte em ${Y1}.${terr.mun&&terr.mun.e?` O Censo 2017 encontrou ${nf(terr.mun.e[4])} estabelecimentos com café.`:''}`;}
+  else{const rank=[...t].sort((a,b)=>b-a).indexOf(last)+1,mi=sacas(last)>=1e6;
+  $('#h-num').innerHTML=`${mi?nf(sacas(last)/1e6,1):nf(sacas(last))} <small>${mi?'milhões de sacas':'sacas'} de café colhidas ${emN(terr)} em ${Y1}</small>`;
+  const ar=pamT(Y1,'Arábica','prod'), cn=pamT(Y1,'Canephora','prod'),ord=['maior','segunda maior','terceira maior','quarta maior'][rank-1]||`${rank}ª maior`;
+  const br=get(Y1,'Brasil','Total','prod'),a=pamT(Y1,'Total','area');
+  $('#h-lead').innerHTML=(prev?`<b>${nf(Math.abs(last/prev-1)*100,1)}%</b> ${last>=prev?'acima':'abaixo'} de ${Y1-1} e a <b>${ord} safra</b> desde ${Y0}. `:'')+(ar&&cn?`O arábica respondeu por <b>${nf(ar/last*100,0)}%</b> e o canephora por <b>${nf(cn/last*100,0)}%</b>`:`Toda a produção é de <b>${ar?'arábica':'canephora'}</b>`)+`, com valor de <b>R$ ${big(pamT(Y1,'Total','valor')*1000)}</b>`+(a?` e produtividade de <b>${nf(sacas(last)/a,1)} sc/ha</b>`:'')+(tLevel()!=='br'?`. Isso é <b>${nf(last/br*100,last/br<.01?2:1)}%</b> do café do Brasil.`:'.');}
+  const el=$('#heromap'),W=560,P=proj(W,scopeBox());let s=`<svg viewBox="0 0 ${W} ${P.H}" role="img" aria-label="Municípios produtores em ${Y1}">`;
+  const sc_=scopeUF();paths(P).forEach((d,i)=>s+=`<path d="${d}" fill="${tLevel()!=='br'&&sc_.includes(feats[i].properties.sigla)?'#3a2518':'#2c1c13'}" stroke="#4a3326" stroke-width=".6"/>`);
+  const yi=mj.anos.indexOf(Y1);let n=0;const zoom=tLevel()==='br'?1:Math.min(4,Math.sqrt(P.sc/(W/(BALL.x1-BALL.x0))));
+  MUN.filter(m=>m.p).map(m=>({m,a:munV(m,Y1,'Arábica','prod'),c:munV(m,Y1,'Canephora','prod')})).filter(o=>o.a+o.c>0).sort((x,y)=>(y.a+y.c)-(x.a+x.c)).forEach(o=>{
+    const on=inT(o.m);if(on)n++;const [x,y]=P.p(o.m.lo,o.m.la),r=Math.max(.9,Math.sqrt(sacas(o.a+o.c))/95*zoom);
+    s+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r.toFixed(2)}" fill="${o.a>=o.c?'#e0714f':'#5fbf7c'}" fill-opacity="${on?.6:.12}"/>`;});
+  if(terr.mun){const [x,y]=P.p(terr.mun.lo,terr.mun.la);s+=`<circle cx="${x}" cy="${y}" r="9" fill="none" stroke="#e0ac4c" stroke-width="2"/>`;}
+  el.innerHTML=s+'</svg>';$('#h-munis').textContent=terr.mun?'':`${nf(n)} municípios produtores em ${Y1}`;
+}
+function safra(){
+  const P=k=>aggT(st.tipo,k), p=P('prod'), a=P('area'), L=tLabel();
+  $('#safra-stats').innerHTML=[stat('Quantidade produzida',sacas(p)>=1e6?nf(sacas(p)/1e6,1)+' mi':nf(sacas(p)),'sacas · '+nf(p)+' t'),stat('Área colhida',nf(a),'hectares'),stat('Área plantada',nf(P('plant')),'hectares'),stat('Produtividade média',nf(a?sacas(p)/a:0,1),'sacas por hectare · '+nf(a?p*1000/a:0)+' kg/ha'),stat('Valor da produção','R$ '+big(P('valor')*1000),nf(P('valor'))+' mil reais')].join('');
+  const ar=YEARS.map(y=>sacas(pamT(y,'Arábica','prod'))), cn=YEARS.map(y=>sacas(pamT(y,'Canephora','prod')));
+  const gr=(v,n)=>v[0]>0&&v.at(-1)>0?`o ${n} ${v.at(-1)>=v[0]?'cresceu':'caiu'} <b>${nf(Math.abs(v.at(-1)/v[0]-1)*100,0)}%</b>`:null;
+  const g=[gr(cn,'canephora'),gr(ar,'arábica')].filter(Boolean);
+  $('#safra-txt').innerHTML=`Valores ${deN(terr).replace(/^(\S+) /,'$1 <b>')}</b>, ${tipoTxt()}, ${per()}${st.ano==Y1||st.ano==='all'?` <span class="pill new">inclui ${Y1}</span>`:''}.${g.length?` Entre ${Y0} e ${Y1}, ${g.join(' e ')}.`:''}`;
+  const pick=y=>{st.ano=String(st.ano==y?'all':y);$('#f-ano').value=st.ano;renderPam();};
+  const sel=st.ano==='all'?null:+st.ano, big_=Math.max(...ar,...cn)>=1e6, div=big_?1e6:1e3;
+  $('#c-prod').previousElementSibling.querySelector('.note').textContent=`${big_?'Milhões':'Milhares'} de sacas de 60 kg. Clique num ano para filtrar a página.`;
+  lines($('#c-prod'),[{n:'Arábica',c:'var(--arabica)',v:ar.map(v=>v/div),dim:st.tipo==='Canephora'},{n:'Canephora',c:'var(--canephora)',v:cn.map(v=>v/div),dim:st.tipo==='Arábica'}],{H:300,stack:true,onPick:pick,sel,fmt:v=>nf(v,v<10&&v%1?1:0)});
+  const yl=t=>YEARS.map(y=>{const a=pamT(y,t,'area');return a?sacas(pamT(y,t,'prod'))/a:0;});
+  lines($('#c-yield'),[{n:'Arábica',c:'var(--arabica)',v:yl('Arábica'),dim:st.tipo==='Canephora'},{n:'Canephora',c:'var(--canephora)',v:yl('Canephora'),dim:st.tipo==='Arábica'}],{H:130,sel,fmt:v=>nf(v,0)});
+  const vd=Math.max(...YEARS.map(y=>pamT(y,'Total','valor')))>=1e6?1e6:1e3;
+  $('#c-valor').previousElementSibling.textContent=vd===1e6?'R$ bilhões correntes':'R$ milhões correntes';
+  lines($('#c-valor'),[{n:'Arábica',c:'var(--arabica)',v:YEARS.map(y=>pamT(y,'Arábica','valor')/vd),dim:st.tipo==='Canephora'},{n:'Canephora',c:'var(--canephora)',v:YEARS.map(y=>pamT(y,'Canephora','valor')/vd),dim:st.tipo==='Arábica'}],{H:130,sel,fmt:v=>nf(v,v<10&&v%1?1:0)});
+}
+
+/* ---------- território ---------- */
+function mapa(){
+  const el=$('#c-map'),W=Math.max(280,el.clientWidth),P=proj(W,scopeBox()),ps=paths(P),u=UNIT[st.ind],lv=tLevel(),sco=scopeUF();
+  let s=`<svg viewBox="0 0 ${W} ${P.H}" width="100%" role="img" aria-label="Mapa">`;
+  if(st.mode==='uf'){
+    const vals=UF.map(n=>metricUF(n,st.tipo,st.ind)),pos=vals.filter(v=>v>0),hi=Math.max(...pos,1),lo=st.ind==='yield'?Math.min(...pos):0;
+    ps.forEach((d,i)=>{const on=lv==='br'||sco.includes(SIG[UF[i]]);s+=`<path d="${d}" data-i="${i}" fill="${vals[i]>0?ramp(st.ind==='yield'?(vals[i]-lo)/(hi-lo||1)*.9+.1:Math.sqrt(vals[i]/hi)*.92+.08):'var(--bg)'}" fill-opacity="${on?1:.3}" stroke="${on&&lv!=='br'?'var(--ink)':'var(--surface)'}" stroke-width="${on&&lv!=='br'?1:.7}" style="cursor:pointer"/>`;});
+    if(terr.mun){const [x,y]=P.p(terr.mun.lo,terr.mun.la);s+=`<circle cx="${x}" cy="${y}" r="7" fill="none" stroke="var(--gold)" stroke-width="2.5"/>`;}
+    el.innerHTML=s+'</svg>';
+    el.querySelectorAll('path').forEach(p=>{const i=+p.dataset.i;p.onmousemove=e=>showTip(e,`<b>${UF[i]}</b><br>${vals[i]>0?u.f(vals[i]):'sem produção'}`);p.onmouseleave=hideTip;p.onclick=()=>{hideTip();setTerr({uf:SIG[UF[i]]});};});
+    $('#map-leg').innerHTML=`<span>${st.ind==='yield'?u.f(lo):'0'}</span><span style="display:inline-block;width:120px;height:8px;border-radius:4px;background:linear-gradient(90deg,var(--soft),var(--arabica))"></span><span>${u.f(hi)}</span><span>· clique num estado para filtrar</span>`;
+  }else{
+    ps.forEach((d,i)=>{const on=lv==='br'||sco.includes(SIG[UF[i]]);s+=`<path d="${d}" fill="var(--soft)" fill-opacity="${on?1:.4}" stroke="var(--surface)" stroke-width=".7"/>`;});
+    const ind=st.ind,pts=[];
+    MUN.filter(m=>m.p&&(lv==='br'||m.uf===terr.uf||(!terr.uf&&m.reg===terr.reg))).forEach(m=>{
+      ['Arábica','Canephora'].forEach(t=>{if(st.tipo!=='Total'&&st.tipo!==t)return;const v=metricM(m,t,ind);if(v>0)pts.push({m,v,t});});});
+    pts.sort((x,y)=>y.v-x.v);const hi=Math.max(...pts.map(p=>p.v),1),lo=ind==='yield'?0:0,zoom=lv==='br'?1:1.6,rmax=Math.max(8,W/42)*zoom;
+    pts.forEach((o,k)=>{const [x,y]=P.p(o.m.lo,o.m.la),r=ind==='yield'?3+Math.min(1,o.v/80)*5:Math.max(1.2,Math.sqrt(o.v/hi)*rmax);
+      s+=`<circle data-k="${k}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r.toFixed(2)}" fill="${o.t==='Arábica'?'var(--arabica)':'var(--canephora)'}" fill-opacity="${terr.mun&&o.m!==terr.mun?.25:.55}" stroke="${o.m===terr.mun?'var(--gold)':'var(--surface)'}" stroke-width="${o.m===terr.mun?2.5:.3}" style="cursor:pointer"/>`;});
+    el.innerHTML=s+'</svg>';
+    el.querySelectorAll('circle').forEach(c=>{const o=pts[+c.dataset.k];c.onmousemove=e=>showTip(e,`<b>${esc(o.m.lab)}</b><br>${o.t}: ${u.f(o.v)}`);c.onmouseleave=hideTip;c.onclick=()=>{hideTip();setTerr({mun:o.m});};});
+    $('#map-leg').innerHTML=`<span><i class="dot" style="background:var(--arabica)"></i>Arábica</span><span><i class="dot" style="background:var(--canephora)"></i>Canephora</span><span>${ind==='yield'?'Tamanho: produtividade':'Tamanho: '+({prod:'quantidade',valor:'valor',area:'área colhida'})[ind]} ${per()} · ${nf(new Set(pts.map(p=>p.m)).size)} municípios · clique para filtrar</span>`;
+  }
+}
+function ranking(){
+  const u=UNIT[st.ind],lv=tLevel(),br=metricT(st.tipo,st.ind,{}),ref=lv==='mun'?{uf:terr.uf}:terr,refv=metricT(st.tipo,st.ind,ref);
+  let rows;
+  if(lv==='uf'||lv==='mun'){rows=MUN.filter(m=>m.uf===terr.uf&&m.p).map(m=>({l:m.n,m,v:metricM(m,st.tipo,st.ind)})).filter(r=>r.v>0).sort((a,b)=>b.v-a.v);
+    const pos=terr.mun?rows.findIndex(r=>r.m===terr.mun):-1;let top=rows.slice(0,10);if(pos>=10)top=[...top.slice(0,9),rows[pos]];
+    $('#rank-h').textContent=`Maiores municípios ${deN({uf:terr.uf})}`;$('#rank-n').textContent=`${st.tipo} · ${per()}`+(pos>=0?` · ${terr.mun.n} é o ${pos+1}º de ${rows.length}`:'');
+    bars($('#c-rank'),top.map(r=>({l:(rows.indexOf(r)+1)+'. '+r.l,v:r.v,hi:r.m===terr.mun,c:'var(--arabica)',t:st.ind==='yield'?nf(r.v,1):nf(r.v/refv*100,1)+'%',tip:`<b>${esc(r.m.lab)}</b><br>${u.f(r.v)}`,m:r.m})),{click:it=>setTerr({mun:it.m})});
+  }else{rows=scopeUF().map(s=>({l:NAME[s],s,v:metricUF(NAME[s],st.tipo,st.ind)})).filter(r=>r.v>0).sort((a,b)=>b.v-a.v).slice(0,10);
+    $('#rank-h').textContent=st.ind==='yield'?'Maior produtividade':lv==='reg'?`Estados da região ${terr.reg}`:'Dez maiores estados';$('#rank-n').textContent=`${st.tipo} · ${per()}`+(st.ind==='yield'?` · ${tLabel()}: ${nf(refv,1)} sc/ha`:'');
+    bars($('#c-rank'),rows.map(r=>({l:r.l,v:r.v,c:'var(--arabica)',t:st.ind==='yield'?nf(r.v,1):nf(r.v/refv*100,1)+'%',tip:`<b>${r.l}</b><br>${u.f(r.v)}`,s:r.s})),{click:it=>setTerr({uf:it.s})});}
+  const reg=Object.entries(REG).map(([r,l])=>{const a=l.reduce((s,x)=>s+metricUF(NAME[x],'Arábica','prod'),0)/1,c=l.reduce((s,x)=>s+metricUF(NAME[x],'Canephora','prod'),0);return{r,a:st.tipo==='Canephora'?0:a/1e6,c:st.tipo==='Arábica'?0:c/1e6};}).sort((x,y)=>(y.a+y.c)-(x.a+x.c));
+  $('#reg-n').textContent=`Milhões de sacas ${per()} · clique para filtrar`;
+  bars($('#c-reg'),reg.map(o=>({l:o.r,hi:o.r===terr.reg,parts:[{v:o.a,c:'var(--arabica)'},{v:o.c,c:'var(--canephora)'}],t:nf(o.a+o.c,1),tip:`<b>${o.r}</b><br>Arábica ${nf(o.a,2)} mi sc<br>Canephora ${nf(o.c,2)} mi sc`})),{click:it=>setTerr({reg:it.l})});
+  const v=metricT(st.tipo,st.ind),top=rows[0];
+  $('#terr-txt').innerHTML=lv==='br'?`<b>${top?.l||''}</b> lidera com ${nf((top?.v||0)/br*100,0)}% (${tipoTxt()}, ${per()}). Use o filtro de território ou clique no mapa para ver uma região, um estado ou um município.`
+    :`<b>${esc(tLabel())}</b>: ${LABEL[st.ind]} de <b>${u.f(v)}</b> (${tipoTxt()}, ${per()})`+(st.ind!=='yield'&&br?`, ${nf(v/br*100,v/br<.01?2:1)}% do Brasil.`:'.');
+}
+const LABEL={prod:'produção',area:'área colhida',plant:'área plantada',valor:'valor da produção',yield:'produtividade'};
+function detalhe(){
+  const T=['Arábica','Canephora','Total'],L=tLabel();
+  const kgha=t=>{const a=aggT(t,'area');return a?aggT(t,'prod')*1000/a:0;};
+  const part=(t,k)=>{if(st.ano==='all')return '–';const v=pamT(+st.ano,t,k);return isNaN(v)?'n/d':nf(v,2);};
+  const rows=[['Valor da produção (mil R$)',t=>nf(aggT(t,'valor'))],['Quantidade produzida (t)',t=>nf(aggT(t,'prod'))],['Quantidade produzida (sacas)',t=>nf(sacas(aggT(t,'prod')))],['Área plantada (ha)',t=>nf(aggT(t,'plant'))],['Área colhida (ha)',t=>nf(aggT(t,'area'))],['Rendimento médio (kg/ha)',t=>nf(kgha(t))],['Produtividade (sacas/ha)',t=>nf(kgha(t)/60,1)],
+    ['Participação no valor da produção (%)',t=>part(t,'pvp')],['Participação na área colhida (%)',t=>part(t,'pac')],['Participação na área plantada (%)',t=>part(t,'pap')]];
+  $('#det-h').textContent=`Detalhamento · ${L}`;
+  $('#t-det').innerHTML=`<thead><tr><th>${per()}</th>${T.map(t=>`<th>${t}</th>`).join('')}</tr></thead><tbody>`+rows.map(([l,f])=>`<tr><td>${l}</td>${T.map(t=>`<td>${f(t)}</td>`).join('')}</tr>`).join('')+'</tbody>'+(st.ano==='all'?`<caption class="src" style="caption-side:bottom;text-align:left;padding-top:6px">Participações aparecem quando um ano é escolhido${tLevel()==='reg'?' (não disponíveis por região)':''}.</caption>`:'');
+}
+function munCard(){
+  const out=$('#mun-out');
+  if(!terr.mun){const l=MUN.filter(m=>inT(m)&&m.p).map(m=>({m,v:metricM(m,st.tipo,'prod')})).filter(o=>o.v>0).sort((a,b)=>b.v-a.v).slice(0,8);
+    $('#mun-h').textContent='Municípios';$('#mun-n').textContent=`Escolha um município no filtro acima ou clique num dos maiores produtores ${deN(terr)}:`;
+    bars(out,l.map(o=>({l:o.m.lab,v:o.v,c:'var(--arabica)',t:sc(o.v),m:o.m})),{click:it=>setTerr({mun:it.m})});return;}
+  const m=terr.mun,e=m.e,s=m.s;
+  $('#mun-h').textContent=m.lab;$('#mun-n').textContent=`Produção ${Y0}–${Y1} (PAM) e Censo Agropecuário 2017`;
+  out.innerHTML=`<div class="stats" style="margin-bottom:8px">${stat(`Produção ${Y1}`,nf(sacas(munV(m,Y1,'Total','prod'))),'sacas')}${stat('Produtividade',nf(munV(m,Y1,'Total','area')?sacas(munV(m,Y1,'Total','prod'))/munV(m,Y1,'Total','area'):0,1),`sc/ha em ${Y1}`)}${e?stat('Estabelecimentos',nf(e[4]),`${nf(e[2]/e[4]*100,0)}% familiares (2017)`):''}${s?stat('Produtores',nf(s.t),`${nf(s.m/s.t*100,1)}% mulheres (2017)`):''}</div><p class="note">Mil sacas por ano</p><div class="chart" id="c-mun"></div>`;
+  lines($('#c-mun'),[{n:'Arábica',c:'var(--arabica)',v:YEARS.map(y=>sacas(munV(m,y,'Arábica','prod'))/1e3)},{n:'Canephora',c:'var(--canephora)',v:YEARS.map(y=>sacas(munV(m,y,'Canephora','prod'))/1e3)}],{H:170,stack:true,fmt:v=>nf(v,v<10&&v>0?1:0)});
+}
+
+/* ---------- estabelecimentos ---------- */
+function estab(){
+  const b=estT(),lv=tLevel(),L=tLabel();
+  $('#est-title').textContent=b.tot?`${nf(b.tot)} estabelecimentos com café ${emN(terr)}`:`Nenhum estabelecimento com café em ${L}`;
+  $('#est-stats').innerHTML=[stat('Estabelecimentos com café',nf(b.tot),'Censo Agropecuário 2017'),stat('Com arábica',nf(b.ar),b.tot?nf(b.ar/b.tot*100,1)+'% do total':''),stat('Com canephora',nf(b.cn),b.tot?nf(b.cn/b.tot*100,1)+'% do total':''),stat('Agricultura familiar',b.tot?nf(b.fam/b.tot*100,2)+'%':'–',nf(b.fam)+' estabelecimentos')].join('');
+  const mode=$('#est-mode button[aria-pressed="true"]').dataset.v;
+  $('#est-leg').innerHTML=mode==='sp'?'<span><i class="sw" style="background:var(--arabica)"></i>Arábica</span><span><i class="sw" style="background:var(--canephora)"></i>Canephora</span><span>· % dos estabelecimentos</span>':'<span><i class="sw" style="background:var(--gold)"></i>Familiar</span><span><i class="sw" style="background:var(--muted)"></i>Não familiar</span>';
+  const byMun=lv==='uf'||lv==='mun';
+  let units=byMun?MUN.filter(m=>m.uf===terr.uf&&m.e).map(m=>({l:m.n,m,ar:m.e[0],cn:m.e[1],fam:m.e[2],nfam:m.e[3],tot:m.e[4],prod17:munV(m,2017,'Total','prod')}))
+    :scopeUF().map(s=>{const e=estT({uf:s});return{l:NAME[s],s,...e,prod17:get(2017,NAME[s],'Total','prod')};}).filter(u=>u.tot>0);
+  units.sort((a,b)=>b.tot-a.tot);
+  $('#est-h1').textContent=byMun?`Perfil dos municípios ${deN({uf:terr.uf})}`:'Perfil por estado';
+  let top=units.slice(0,12);if(terr.mun){const i=units.findIndex(u=>u.m===terr.mun);if(i>=12)top=[...top.slice(0,11),units[i]];}
+  const pick=it=>it.m?setTerr({mun:it.m}):setTerr({uf:it.s});
+  bars($('#c-estuf'),top.map(u=>mode==='sp'?{l:u.l,hi:u.m&&u.m===terr.mun,m:u.m,s:u.s,parts:[{v:u.ar/u.tot*100,c:'var(--arabica)'},{v:u.cn/u.tot*100,c:'var(--canephora)'}],t:nf(u.tot),tip:`<b>${esc(u.l)}</b><br>Arábica ${nf(u.ar)} (${nf(u.ar/u.tot*100,1)}%)<br>Canephora ${nf(u.cn)} (${nf(u.cn/u.tot*100,1)}%)`}
+    :{l:u.l,hi:u.m&&u.m===terr.mun,m:u.m,s:u.s,parts:[{v:u.fam/u.tot*100,c:'var(--gold)'},{v:u.nfam/u.tot*100,c:'var(--muted)'}],t:nf(u.fam/u.tot*100,0)+'%',tip:`<b>${esc(u.l)}</b><br>Familiar ${nf(u.fam)}<br>Não familiar ${nf(u.nfam)}`}),{max:100,click:pick});
+  // dispersão
+  $('#sc-note').textContent=`Cada ponto é um ${byMun?'município '+deN({uf:terr.uf}):'estado'} (escala logarítmica). Produção da PAM 2017, ano do Censo.`;
+  const el=$('#c-scatter'),W=Math.max(280,el.clientWidth),H=280,m={l:62,r:14,t:10,b:34};
+  const pts=units.filter(u=>u.tot>0&&u.prod17>0),lx=v=>Math.log10(v);
+  if(!pts.length){el.innerHTML='<p class="note">Sem dados para este recorte.</p>';}else{
+  const X0=Math.floor(lx(Math.min(...pts.map(p=>p.tot)))),X1=Math.ceil(lx(Math.max(...pts.map(p=>p.tot)))+.01),Y0l=Math.floor(lx(Math.min(...pts.map(p=>p.prod17)))),Y1l=Math.ceil(lx(Math.max(...pts.map(p=>p.prod17)))+.01);
+  const xs=v=>m.l+(lx(v)-X0)/(X1-X0||1)*(W-m.l-m.r), ys=v=>H-m.b-(lx(v)-Y0l)/(Y1l-Y0l||1)*(H-m.t-m.b);
+  const lab=v=>v>=1e6?nf(v/1e6)+' mi':v>=1e3?nf(v/1e3)+' mil':nf(v);
+  let s=`<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}">`;
+  for(let e=X0;e<=X1;e++)s+=`<line class="axis" x1="${xs(10**e)}" x2="${xs(10**e)}" y1="${m.t}" y2="${H-m.b}"/><text x="${xs(10**e)}" y="${H-m.b+14}" text-anchor="middle">${lab(10**e)}</text>`;
+  for(let e=Y0l;e<=Y1l;e++)s+=`<line class="axis" x1="${m.l}" x2="${W-m.r}" y1="${ys(10**e)}" y2="${ys(10**e)}"/><text x="${m.l-6}" y="${ys(10**e)+4}" text-anchor="end">${lab(10**e)}</text>`;
+  s+=`<text x="${(W+m.l)/2}" y="${H-2}" text-anchor="middle">estabelecimentos</text><text transform="translate(11 ${(H-m.b)/2}) rotate(-90)" text-anchor="middle">toneladas (2017)</text>`;
+  const big3=pts.slice().sort((a,b)=>b.tot-a.tot).slice(0,6);
+  pts.forEach((p,k)=>{const sel=p.m&&p.m===terr.mun;s+=`<circle data-k="${k}" cx="${xs(p.tot)}" cy="${ys(p.prod17)}" r="${sel?8:byMun?4:6}" fill="${p.cn>p.ar?'var(--canephora)':'var(--arabica)'}" fill-opacity="${sel?1:.7}" stroke="${sel?'var(--gold)':'none'}" stroke-width="2.5" style="cursor:pointer"/>`;
+    if(!byMun&&big3.includes(p)||sel)s+=`<text x="${xs(p.tot)+9}" y="${ys(p.prod17)+4}" style="fill:var(--ink)">${esc(p.s||p.l)}</text>`;});
+  el.innerHTML=s+'</svg>';
+  el.querySelectorAll('circle').forEach(c=>{const p=pts[+c.dataset.k];c.onmousemove=e=>showTip(e,`<b>${esc(p.l)}</b><br>${nf(p.tot)} estabelecimentos<br>${nf(p.prod17)} t em 2017`);c.onmouseleave=hideTip;c.onclick=()=>{hideTip();pick(p);};});}
+  const tm=MUN.filter(m=>inT(m,lv==='mun'?{uf:terr.uf}:terr)&&m.e).sort((a,b)=>b.e[4]-a.e[4]).slice(0,12);
+  $('#estmun-n').textContent=`Arábica e canephora · ${lv==='mun'?NAME[terr.uf]:L}`;
+  bars($('#c-estmun'),tm.map(m=>({l:m.lab,m,hi:m===terr.mun,parts:[{v:m.e[0],c:'var(--arabica)'},{v:m.e[1],c:'var(--canephora)'}],t:nf(m.e[4]),tip:`<b>${esc(m.lab)}</b><br>Arábica ${nf(m.e[0])}<br>Canephora ${nf(m.e[1])}<br>Familiar ${nf(m.e[2])}`})),{click:it=>setTerr({mun:it.m})});
+  $('#est-h2').textContent=byMun?`Estabelecimentos e produção nos municípios ${deN({uf:terr.uf})}`:'Estabelecimentos e produção por estado';
+  $('#t-est').innerHTML=`<thead><tr><th>${byMun?'Município':'Estado'}</th><th>Arábica</th><th>Canephora</th><th>Familiar</th><th>Produção 2017 (t)</th></tr></thead><tbody>`+units.slice(0,byMun?60:30).map(u=>`<tr${u.m&&u.m===terr.mun?' style="font-weight:700"':''}><td>${esc(u.l)}</td><td>${nf(u.ar)}</td><td>${nf(u.cn)}</td><td>${nf(u.fam/u.tot*100,0)}%</td><td>${nf(u.prod17)}</td></tr>`).join('')+'</tbody>'+(byMun&&units.length>60?`<caption class="src" style="caption-side:bottom;text-align:left">Mostrando os 60 municípios com mais estabelecimentos de ${units.length}.</caption>`:'');
+}
+setSeg('est-mode',()=>{},estab);
+
+/* ---------- produtores ---------- */
+function produtores(){
+  const o=socT(),L=tLabel(),lv=tLevel();
+  if(!o.t){$('#soc-stats').innerHTML=`<p class="note">${esc(L)} não tem estabelecimentos com café no Censo 2017.</p>`;}
+  else $('#soc-stats').innerHTML=[stat(lv==='mun'?'Produtores no município':'Produtores nos municípios cafeeiros',nf(o.t),'pessoas que dirigem estabelecimentos'),stat('Mulheres',nf(o.m),nf(o.m/o.t*100,1)+'% dos produtores'),stat('Homens',nf(o.h),nf(o.h/o.t*100,1)+'% dos produtores'),stat('Estabelecimentos de café com mulheres (est.)',nf(o.wa+o.wc),'arábica + canephora')].join('');
+  $('#pyr-n').textContent=`Homens à esquerda, mulheres à direita · ${L}`;
+  const el=$('#c-pyr'),W=Math.max(280,el.clientWidth),rows=mj.idades.map((f,i)=>({faixa:f,h:o.a[i][0],m:o.a[i][1]})).reverse(),rh=30,H=rows.length*rh+30,mid=W/2,lab=86,half=(W-lab)/2-6,max=Math.max(1,...rows.map(r=>Math.max(r.h,r.m)));
+  const fm=v=>v>=1e4?nf(v/1e3,0)+' mil':nf(v);
+  let s=`<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}">`;
+  rows.forEach((r,i)=>{const y=i*rh+4,wh=r.h/max*half,wm=r.m/max*half;
+    s+=`<rect x="${mid-lab/2-wh}" y="${y}" width="${wh}" height="${rh-8}" rx="2" fill="var(--arabica)"/><rect x="${mid+lab/2}" y="${y}" width="${wm}" height="${rh-8}" rx="2" fill="var(--gold)"/>`;
+    s+=`<text x="${mid}" y="${y+rh/2}" text-anchor="middle" style="fill:var(--ink)">${r.faixa}</text>`;
+    s+=wh>60?`<text x="${mid-lab/2-wh+6}" y="${y+rh/2}" style="fill:#fff">${fm(r.h)}</text>`:`<text x="${mid-lab/2-wh-4}" y="${y+rh/2}" text-anchor="end">${fm(r.h)}</text>`;
+    s+=`<text x="${mid+lab/2+wm+4}" y="${y+rh/2}">${fm(r.m)}</text>`;});
+  s+=`<text x="${mid-lab/2-4}" y="${H-4}" text-anchor="end" style="fill:var(--arabica);font-weight:600">Homens</text><text x="${mid+lab/2+4}" y="${H-4}" style="fill:var(--gold);font-weight:600">Mulheres</text>`;
+  el.innerHTML=s+'</svg>';
+  $('#env-big').textContent=o.env==null?'–':nf(o.env,1);
+  const er=Object.keys(REG).map(r=>[r,socT({reg:r}).env]).sort((a,b)=>b[1]-a[1]);
+  const extra=lv==='uf'||lv==='mun'?[[NAME[terr.uf],socT({uf:terr.uf}).env,true]]:[];if(lv==='mun')extra.push([terr.mun.n,o.env,true]);
+  bars($('#c-env'),[...extra,...er].filter(x=>x[1]!=null).map(([r,v,h])=>({l:r,v,hi:h||r===terr.reg,c:h?'var(--gold)':'var(--arabica)',t:nf(v,1)})));
+  // mapa / lista de mulheres
+  if(lv==='uf'||lv==='mun'){
+    $('#wmap-n').textContent=`Municípios ${deN({uf:terr.uf})} com mais estabelecimentos de café dirigidos por mulheres (estimativa)`;
+    const l=MUN.filter(m=>m.uf===terr.uf&&m.s&&(m.s.wa+m.s.wc)>0).sort((a,b)=>(b.s.wa+b.s.wc)-(a.s.wa+a.s.wc));let top=l.slice(0,14);if(terr.mun&&!top.includes(terr.mun)&&terr.mun.s)top=[...top.slice(0,13),terr.mun];
+    const wm=$('#c-wmap');wm.className='bars';bars(wm,top.map(m=>({l:m.n,m,hi:m===terr.mun,parts:[{v:m.s.wa,c:'var(--arabica)'},{v:m.s.wc,c:'var(--canephora)'}],t:nf(m.s.wa+m.s.wc),tip:`<b>${esc(m.lab)}</b><br>Arábica ${nf(m.s.wa)} · Canephora ${nf(m.s.wc)}<br>Mulheres entre produtores: ${nf(m.s.m/m.s.t*100,1)}%`})),{click:it=>setTerr({mun:it.m})});
+    $('#wmap-leg').innerHTML='<span><i class="sw" style="background:var(--arabica)"></i>Arábica</span><span><i class="sw" style="background:var(--canephora)"></i>Canephora</span>';
+  }else{
+    $('#wmap-n').textContent='Estabelecimentos de café dirigidos por mulheres (estimativa), por estado';
+    const wm=$('#c-wmap');wm.className='chart';const W2=Math.max(260,wm.clientWidth),P=proj(W2,scopeBox()),sco=scopeUF(),vals=UF.map(n=>{const x=socT({uf:SIG[n]});return x.wa+x.wc;}),hi=Math.max(...vals,1);
+    let m2=`<svg viewBox="0 0 ${W2} ${P.H}" width="100%">`;paths(P).forEach((d,i)=>m2+=`<path d="${d}" data-i="${i}" fill="${vals[i]>0?ramp(Math.sqrt(vals[i]/hi)*.92+.08):'var(--bg)'}" fill-opacity="${lv==='br'||sco.includes(SIG[UF[i]])?1:.3}" stroke="var(--surface)" stroke-width=".7" style="cursor:pointer"/>`);
+    wm.innerHTML=m2+'</svg>';
+    wm.querySelectorAll('path').forEach(p=>{const i=+p.dataset.i,u=socT({uf:SIG[UF[i]]});p.onmousemove=e=>showTip(e,`<b>${UF[i]}</b><br>${u.t?`Arábica ${nf(u.wa)} · Canephora ${nf(u.wc)}<br>Mulheres entre produtores: ${nf(u.m/u.t*100,1)}%`:'sem estabelecimentos de café'}`);p.onmouseleave=hideTip;p.onclick=()=>{hideTip();setTerr({uf:SIG[UF[i]]});};});
+    $('#wmap-leg').innerHTML=`<span>0</span><span style="display:inline-block;width:120px;height:8px;border-radius:4px;background:linear-gradient(90deg,var(--soft),var(--arabica))"></span><span>${nf(hi)} estabelecimentos</span>`;}
+  const e=estT();
+  $('#w-sp').innerHTML=`<div class="stats" style="border-top-color:var(--canephora)"><div class="stat"><span class="l">Canephora</span><span class="v cn">${nf(o.wc)}</span><span class="s">${e.cn?nf(o.wc/e.cn*100,1)+'% dos '+nf(e.cn)+' estabelecimentos':'sem estabelecimentos de canephora'}</span></div></div><div class="stats" style="border-top-color:var(--arabica)"><div class="stat"><span class="l">Arábica</span><span class="v ar">${nf(o.wa)}</span><span class="s">${e.ar?nf(o.wa/e.ar*100,1)+'% dos '+nf(e.ar)+' estabelecimentos':'sem estabelecimentos de arábica'}</span></div></div><p class="src">Estimativa: soma, por município, da proporção de mulheres entre os produtores vezes os estabelecimentos de cada espécie.</p>`;
+}
+
+/* ---------- clima ---------- */
+function clima(){
+  $('#c-weeks').innerHTML=zarc.semanas.map(w=>`<div data-s="${w.s}"><i style="height:${w.nr}%;background:var(--risk1)"></i><i style="height:${w.baixo}%;background:var(--risk2)"></i><i style="height:${w.medio}%;background:var(--risk3)"></i><i style="height:${w.alto}%;background:var(--risk4)"></i></div>`).join('');
+  $$('#c-weeks > div').forEach(d=>{const w=zarc.semanas[d.dataset.s-1];d.onmousemove=e=>showTip(e,`<b>Semana ${w.s}</b><br>Não recomendado ${nf(w.nr,1)}%<br>Baixo risco ${nf(w.baixo,1)}%<br>Médio ${nf(w.medio,1)}%<br>Alto ${nf(w.alto,1)}%`);d.onmouseleave=hideTip;});
+  $('#c-wkax').innerHTML=zarc.semanas.map(w=>`<span>${w.s}</span>`).join('');
+  const md=zarc.media_semanas;
+  $('#z-med').innerHTML=`<div class="stats" style="border-top-color:var(--canephora)"><div class="stat"><span class="l">Canephora</span><span class="v cn">${nf(md.Canephora,2)}</span><span class="s">semanas de baixo risco, em média</span></div></div><div class="stats" style="border-top-color:var(--arabica)"><div class="stat"><span class="l">Arábica</span><span class="v ar">${nf(md['Arábica'],2)}</span><span class="s">semanas</span></div></div><p class="src">Diferença média entre as espécies: <b>${nf(md.Canephora-md['Arábica'],2)} semanas</b>.</p>`;
+  const jc={'Janela ampla':'var(--risk2)','Janela moderada':'var(--gold)','Janela restrita':'var(--risk1)'};
+  bars($('#c-jan'),Object.entries(zarc.janelas).map(([k,v])=>({l:k,v,c:jc[k],t:nf(v,1)+'%'})),{max:40});
+  const cc={ampla:'var(--risk2)',moderada:'var(--gold)',restrita:'var(--risk1)'};
+  bars($('#c-dur'),zarc.duracao.map(([s,j,v])=>({l:`${s} ${s==='1'?'semana':s==='Outros'?'('+j+')':'semanas'}`,v:v/1e3,c:cc[j],t:nf(v/1e3,2)})));
+  $('#z-comb').textContent=nf(zarc.combinacoes);
+}
+
+/* ---------- pesquisa ---------- */
+const CL=Object.fromEntries(emb.clusters.map(c=>[c.id,c.nome]));
+let shown=20;
+emb.pubs.forEach(p=>p._s=norm(p.t+' '+p.a+' '+(p.k||'')));
+function filtPubs({termo='',unidade='',tema=''}={}){const q=norm(termo).trim();return emb.pubs.filter(p=>(!q||q.split(/\s+/).every(w=>p._s.includes(w)))&&(!unidade||p.u===unidade)&&(!tema||p.c==tema));}
+function embView(){const sel=$('#p-cl').value;if(!sel)return{sel:'',anos:emb.anos,unidades:emb.unidades,autores:emb.autores_top,palavras:emb.palavras,n:emb.kpi.pubs};
+  const P=emb.pubs.filter(p=>String(p.c)===sel),anos={},un={},au={},kw={},ok=new Set(Object.keys(emb.autores_top));
+  const cnt=(o,k)=>{if(k)o[k]=(o[k]||0)+1;};
+  P.forEach(p=>{cnt(anos,p.y);cnt(un,p.u);(p.a||'').split(';').map(x=>x.trim()).filter(x=>ok.has(x)).forEach(x=>cnt(au,x));
+    [...new Set((p.k||'').split(/[;,]/).map(x=>x.trim()).filter(Boolean))].forEach(x=>cnt(kw,x));});
+  const srt=o=>Object.fromEntries(Object.entries(o).sort((a,b)=>b[1]-a[1]));
+  return{sel,anos,unidades:srt(un),autores:srt(au),palavras:Object.entries(kw).sort((a,b)=>b[1]-a[1]).slice(0,40),n:P.length};}
+function pesquisa(){
+  const k=emb.kpi,V=embView(),selN=V.sel?CL[V.sel]:'';
+  $$('.emb-sel').forEach(e=>e.textContent=V.sel?`Tema: ${selN}`:'');
+  $('#pes-stats').innerHTML=[stat(V.sel?'Publicações do tema':'Publicações sobre café',nf(V.n),V.sel?`${nf(V.n/k.pubs*100,1)}% de ${nf(k.pubs)}`:`até ${k.ano_max}`),stat('Autores envolvidos',nf(k.autores),`${nf(k.autores_embrapa)} da Embrapa · ${nf(k.autores_externos)} externos`),stat('Autores por publicação',nf(k.media_autores,1),'média'),stat('Unidades da Embrapa',nf(k.unidades),'com publicações sobre café'),stat('Soluções tecnológicas',nf(emb.tecnologias.length),'no portal da Embrapa')].join('');
+  const el=$('#c-pubano'),ys=Object.keys(emb.anos).map(Number),a0=Math.min(...ys),a1=Math.max(...ys),W=Math.max(280,el.clientWidth),H=220,m={l:34,r:8,t:10,b:24},max=Math.max(...Object.values(V.anos),1);
+  const xs=y=>m.l+(y-a0)/(a1-a0)*(W-m.l-m.r),yy=v=>H-m.b-v/max*(H-m.t-m.b),bw=Math.max(1,(W-m.l-m.r)/(a1-a0+1)-1);
+  let s=`<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}">`;
+  for(let d=Math.ceil(a0/10)*10;d<=a1;d+=10)s+=`<line class="axis" x1="${xs(d)}" x2="${xs(d)}" y1="${m.t}" y2="${H-m.b}"/><text x="${xs(d)}" y="${H-6}" text-anchor="middle">${d}</text>`;
+  [0,Math.round(max/2),max].forEach(v=>s+=`<text x="${m.l-6}" y="${yy(v)+4}" text-anchor="end">${v}</text>`);
+  for(let y=a0;y<=a1;y++){const v=V.anos[y]||0;if(v)s+=`<rect data-y="${y}" x="${xs(y)-bw/2}" y="${yy(v)}" width="${bw}" height="${H-m.b-yy(v)}" fill="var(--arabica)"/>`;}
+  el.innerHTML=s+'</svg>';el.querySelectorAll('rect').forEach(r=>{r.onmousemove=e=>showTip(e,`<b>${r.dataset.y}</b>: ${V.anos[r.dataset.y]} publicações${V.sel?' do tema':''}`);r.onmouseleave=hideTip;});
+  const g=emb.genero,gt=g.Homem+g.Mulher;
+  $('#c-gen').innerHTML=`<div class="bar" style="grid-template-columns:1fr"><span class="trk" style="height:26px"><i style="width:${g.Homem/gt*100}%;background:var(--arabica)"></i><i style="width:${g.Mulher/gt*100}%;background:var(--gold)"></i></span></div><div class="legend" style="margin-top:6px"><span><i class="sw" style="background:var(--arabica)"></i>Homens ${nf(g.Homem/gt*100,1)}% (${nf(g.Homem)})</span><span><i class="sw" style="background:var(--gold)"></i>Mulheres ${nf(g.Mulher/gt*100,1)}% (${nf(g.Mulher)})</span></div>`;
+  bars($('#c-tipo'),Object.entries(emb.tipos).slice(0,8).map(([l,v])=>({l:l.replace(/ \(.*\)/,''),v,c:'var(--muted)'})));
+  const tot=emb.clusters.reduce((s,c)=>s+c.n,0);
+  $('#c-cl').innerHTML=emb.clusters.map(c=>`<button class="cl" type="button" data-c="${c.id}" aria-pressed="${$('#p-cl').value==c.id}"><b>${nf(c.n/tot*100,1)}%</b><span>${esc(c.nome)}</span><span>${nf(c.n)} publicações</span></button>`).join('');
+  $$('#c-cl .cl').forEach(b=>b.onclick=()=>{const on=b.getAttribute('aria-pressed')!=='true';$$('#c-cl .cl').forEach(x=>x.setAttribute('aria-pressed','false'));b.setAttribute('aria-pressed',on);$('#p-cl').value=on?b.dataset.c:'';shown=20;pesquisa();pubs();banner();$('#c-pubano').closest('.card').scrollIntoView({behavior:'smooth',block:'start'});});
+  const un=Object.entries(emb.unidades),vu=Object.entries(V.unidades),top=vu.slice(0,9),outros=vu.slice(9).reduce((s,[,v])=>s+v,0);
+  bars($('#c-uni'),[...top.map(([l,v])=>({l:l.replace('Embrapa ',''),full:l,v,c:'var(--arabica)'})),...(vu.length>9?[{l:`Outras ${vu.length-9} unidades`,v:outros,c:'var(--muted)'}]:[])],{click:it=>{if(it.full){$('#p-uni').value=it.full;shown=20;pubs();$('#p-q').scrollIntoView({block:'center'});}}});
+  bars($('#c-aut'),Object.entries(V.autores).slice(0,10).map(([l,v])=>({l,v,c:'var(--canephora)'})),{click:it=>{$('#p-q').value=it.l;shown=20;pubs();$('#p-q').scrollIntoView({block:'center'});}});
+  const PW=V.palavras.length?V.palavras:emb.palavras,kmax=PW[0][1],kmin=PW.at(-1)[1];
+  $('#c-kw').innerHTML=PW.map(([w,n])=>`<span role="button" tabindex="0" data-w="${esc(w)}" style="font-size:${(0.85+1.25*Math.sqrt((n-kmin)/((kmax-kmin)||1))).toFixed(2)}rem;cursor:pointer;font-weight:${n>kmax*.3?650:400}" title="${n} publicações">${esc(w)}</span>`).join('');
+  $$('#c-kw span').forEach(s=>{const go=()=>{$('#p-q').value=s.dataset.w;shown=20;pubs();$('#p-q').scrollIntoView({block:'center'});};s.onclick=go;s.onkeydown=e=>{if(e.key==='Enter')go();};});
+  const keepU=$('#p-uni').value,keepC=$('#p-cl').value;
+  $('#p-uni').innerHTML='<option value="">Todas as unidades</option>'+un.map(([u])=>`<option>${esc(u)}</option>`).join('');
+  $('#p-cl').innerHTML='<option value="">Todos os temas</option>'+emb.clusters.map(c=>`<option value="${c.id}">${c.id}. ${esc(c.nome)}</option>`).join('');
+  $('#p-uni').value=keepU;$('#p-cl').value=keepC;
+  const tt={};emb.tecnologias.forEach(t=>tt[t.tipo]=(tt[t.tipo]||0)+1);
+  $('#tech-n').textContent=`${emb.tecnologias.length} soluções com café no nome ou nas palavras-chave, de ${new Set(emb.tecnologias.map(t=>t.u)).size} unidades`;
+  bars($('#c-techtipo'),Object.entries(tt).sort((a,b)=>b[1]-a[1]).map(([l,v])=>({l,v,c:'var(--gold)'})));
+  $('#c-tech').innerHTML=emb.tecnologias.map(t=>`<a class="tech" ${/^https:\/\//.test(t.url||'')?`href="${esc(t.url)}" target="_blank" rel="noopener"`:''}><b>${esc(t.n)}</b><span>${esc(t.tipo)} · ${esc(t.u)}</span></a>`).join('');
+}
+function pubs(){
+  const r=filtPubs({termo:$('#p-q').value,unidade:$('#p-uni').value,tema:$('#p-cl').value});
+  $('#p-count').textContent=`${nf(r.length)} publicações, das mais recentes para as mais antigas`;
+  $('#p-list').innerHTML=r.slice(0,shown).map(p=>`<div class="pub">${/^https:\/\//.test(p.l||'')?`<a href="${esc(p.l)}" target="_blank" rel="noopener">${esc(p.t)}</a>`:`<b>${esc(p.t)}</b>`}<span>${esc(p.a)}</span><span>${esc(p.u)} · ${p.y} · Tema ${p.c}: ${esc(CL[p.c])}</span></div>`).join('');
+  $('#p-more').hidden=r.length<=shown;
+}
+let pt;$('#p-q').addEventListener('input',()=>{clearTimeout(pt);pt=setTimeout(()=>{shown=20;pubs();},200);});
+$('#p-uni').onchange=()=>{shown=20;pubs();};$('#p-cl').onchange=()=>{shown=20;pesquisa();pubs();banner();};
+$('#p-more').onclick=()=>{shown+=30;pubs();};
+
+/* ---------- páginas ---------- */
+const PAGES=['visao','territorio','estabelecimentos','produtores','clima','pesquisa'];
+let page='visao';
+const R={visao:()=>{hero();safra();},territorio:()=>{mapa();ranking();detalhe();munCard();},estabelecimentos:estab,produtores,clima,pesquisa:()=>{pesquisa();pubs();}};
+function renderPam(){if(page==='visao')safra();if(page==='territorio')R.territorio();}
+function show(p){page=PAGES.includes(p)?p:'visao';
+  $$('[data-page]').forEach(el=>el.hidden=el.dataset.page!==page);
+  $$('#chap a').forEach(a=>a.classList.toggle('on',a.getAttribute('href')==='#'+page));
+  $('#flt').hidden=!(page==='visao'||page==='territorio');
+  R[page]();banner();scrollTo(0,0);post();}
+addEventListener('hashchange',()=>show(location.hash.slice(1)));
+function go(p){if(location.hash==='#'+p)show(p);else location.hash=p;}
+let rt,lastW=innerWidth;addEventListener('resize',()=>{if(Math.abs(innerWidth-lastW)<4)return;lastW=innerWidth;clearTimeout(rt);rt=setTimeout(()=>R[page](),150);});
+function post(){try{if(parent!==window)parent.postMessage({tipo:'cafe-em-numeros:altura',altura:document.documentElement.scrollHeight},'*');}catch(e){}}
+new ResizeObserver(post).observe(document.body);
+show(location.hash.slice(1));
+
+/* ---------- assistente (sem IA: regras e sinônimos) ---------- */
+const dr=$('#drawer'),convo=$('#convo');
+const openD=()=>{dr.hidden=false;$('#fab').hidden=true;setTimeout(()=>$('#d-q').focus(),50);};
+$('#fab').onclick=openD;$('#d-x').onclick=()=>{dr.hidden=true;$('#fab').hidden=false;};
+addEventListener('keydown',e=>{if(e.key==='Escape'&&!dr.hidden)$('#d-x').click();});
+function fmtM(m,v){return m==='prod'?`${sacas(v)>=1e6?nf(sacas(v)/1e6,2)+' milhões de sacas':nf(sacas(v))+' sacas'} (${nf(v)} t)`:m==='valor'?`R$ ${big(v*1000)} (${nf(v)} mil reais)`:m==='yield'?`${nf(v,1)} sacas por hectare (${nf(v*60)} kg/ha)`:`${nf(v)} hectares`;}
+const valT=(y,t,m,T)=>{if(m==='yield'){const a=pamT(y,t,'area',T);return a?sacas(pamT(y,t,'prod',T))/a:0;}return pamT(y,t,m,T);};
+const REGN={norte:'Norte',nordeste:'Nordeste',sudeste:'Sudeste',sul:'Sul','centro oeste':'Centro-Oeste'};
+const UFALIAS={minas:'Minas Gerais',capixaba:'Espírito Santo',paulista:'São Paulo',mineiro:'Minas Gerais',baiano:'Bahia',rondoniense:'Rondônia'};
+const MUNIDX=MUN.filter(m=>m.k.length>=4).sort((a,b)=>b.k.length-a.k.length);
+const STOP=new Set('quantas quantos quanto quanta qual quais que de da do das dos em no na nos nas o a os as um uma sobre tratam trata tratando tem têm existem existe ha há publicacoes publicacao publicadas publicados artigos artigo embrapa pesquisa pesquisas estudos estudo falam fala falando com para por e ou cafe cafes cafeeiro mostre liste listar me diga quero saber foram foi sao são ja já mais menos unidade unidades autor autores'.split(' '));
+const SNAMES=Object.keys(SIG).sort((a,b)=>b.length-a.length);
+function parse(raw){
+  const q=' '+norm(raw).replace(/[?!.,;:()]/g,' ').replace(/-/g,' ').replace(/\s+/g,' ')+' ';
+  const o={raw,q,anos:[...new Set((q.match(/\b(19|20)\d{2}\b/g)||[]).map(Number))].sort(),locs:[],mun:null,reg:null};
+  let rest=q;
+  // município primeiro (nome mais longo), com UF opcional ao lado
+  const ufHint=(raw.match(/\b([A-Za-z]{2})\b\s*\)?\s*\??$/)||raw.match(/[,(\-–]\s*([A-Za-z]{2})\b/)||[])[1];
+  for(const m of MUNIDX){if(rest.includes(' '+m.k+' ')&&!SNAMES.some(n=>norm(n)===m.k)){const cands=MUNIDX.filter(x=>x.k===m.k);
+      o.mun=(ufHint&&cands.find(x=>x.uf===ufHint.toUpperCase()))||cands.find(x=>x.p)||m;rest=rest.replace(' '+m.k+' ',' ');break;}}
+  for(const n of SNAMES){const k=' '+norm(n)+' ';if(n==='Pará'&&!/pará\b/i.test(raw))continue;if(rest.includes(k)){o.locs.push(n);rest=rest.replace(k,' ');}}
+  (raw.match(/\b[A-Z]{2}\b/g)||[]).forEach(s=>{if(NAME[s]&&!o.locs.includes(NAME[s]))o.locs.push(NAME[s]);});
+  if(ufHint&&NAME[ufHint.toUpperCase()]&&!o.locs.includes(NAME[ufHint.toUpperCase()]))o.locs.push(NAME[ufHint.toUpperCase()]);
+  for(const [a,n] of Object.entries(UFALIAS))if(rest.includes(' '+a+' ')&&!o.locs.includes(n))o.locs.push(n);
+  if(o.mun)o.locs=o.locs.filter(n=>SIG[n]!==o.mun.uf);
+  if(/\bbrasil\b|\bpais\b|nacional/.test(q))o.brasil=true;
+  for(const [k,v] of Object.entries(REGN))if(new RegExp('\\b(regiao )?'+k+'\\b').test(rest)&&!(k==='sul'&&/mato grosso do sul|rio grande do sul/.test(q)))o.reg=v;
+  o.tipo=/arabica/.test(q)?'Arábica':/canephora|conilon|robusta|canefora/.test(q)?'Canephora':'Total';
+  o.metric=/valor|r\$|reais|fatur|receita|dinheiro/.test(q)?'valor':/produtividade|rendimento|sc\/ha|sacas por hectare|por hectare|kg\/ha/.test(q)?'yield':/area plantada|plantad/.test(q)?'plant':/area|hectares?\b/.test(q)?'area':'prod';
+  o.all=/tudo|todos os (dados|indicadores)|informac|dados d|resumo|panorama|perfil|territorio d/.test(q);
+  o.fora=/preco|cotac|export|import|consumo|bolsa|dolar|previs|amanha|hoje|chuva|geada|quanto custa|mercado/.test(q);
+  o.dados=/produ|safra|saca|colh|area|valor|rendimento|produtividade|tonelada|plant|cafe|ano|estado|munic|cresc|evolu|arabica|canephora|conilon|robusta/.test(q);
+  o.topic=/zarc|risco|clima|janela|zoneamento|semanas? (de )?baixo|epoca de plantio|quando plantar/.test(q)?'zarc'
+    :/publica|artigo|pesquis|estudo|autor|tese|livro|folheto|cientific/.test(q)?'pub'
+    :/tecnolog|solucoes|solucao|cultivar|brs\b/.test(q)?'tec'
+    :/(maior|maiores|menor|menores|principal|principais|top|lider)( \w+)? produtor|produtor(es)? de cafe (do|no) (brasil|estado|pais)/.test(q)?'pam'
+    :/mulher|mulheres|homens?\b|genero|\bidade|jovens?|idos|envelhec|sucess|faixa etaria|produtor(es|as)?\b|numero de produtores|produtores rurais/.test(q)?'soc'
+    :/estabelec|propriedade|fazenda|familiar|sitio/.test(q)?'est':'pam';
+  o.rank=/\b(maior|maiores|mais|lider|lidera|top|ranking|principais?|menor|menores|menos)\b/.test(q);
+  o.low=/\b(menor|menores|menos|pior)\b/.test(q)&&!/\bmais\b/.test(q);
+  o.growth=/cresc|aument|evolu|varia|caiu|queda|diminu|desde|mudou|subiu/.test(q);
+  o.when=/em que ano|qual (foi o )?ano|quando foi|que ano/.test(q);
+  o.cmp=/compar|versus|\bvs\b|diferenca/.test(q)||o.locs.length>1;
+  o.munrank=/municipio|cidade/.test(q);
+  o.rest=rest;return o;}
+const SRC_PAM='IBGE, Produção Agrícola Municipal (Tabela 5457)',SRC_CENSO='IBGE, Censo Agropecuário 2017',SRC_EMB='Embrapa (Redape)';
+function A(html,tab,src,T){return{html:html+(src?`<span class="src">Fonte: ${src}</span>`:''),tab,T};}
+function targets(o){if(o.mun)return[{mun:o.mun}];if(o.locs.length)return o.locs.map(n=>({uf:SIG[n]}));if(o.reg)return[{reg:o.reg}];return[{}];}
+const nome=T=>T.mun?T.mun.lab:T.uf?((artUF(T.uf)?artUF(T.uf)+" ":"")+NAME[T.uf]):T.reg?`a região ${T.reg}`:'o Brasil';
+const cap=x=>x.charAt(0).toUpperCase()+x.slice(1);
+
+function resumoPam(T,y){const p=pamT(y,'Total','prod',T),h=pamT(y,'Total','area',T),l=pamT(y,'Total','plant',T),v=pamT(y,'Total','valor',T),a=pamT(y,'Arábica','prod',T),c=pamT(y,'Canephora','prod',T),br=get(y,'Brasil','Total','prod'),pv=pamT(y,'Total','pvp',T);
+  if(!p)return `Em ${y}, a PAM não registra produção de café ${emN(T)}.`;
+  return `<b>${esc(T.mun?T.mun.lab:nome(T).replace(/^o /,'').replace(/^a /,''))}, ${y}</b><ul><li>Produção: <b>${fmtM('prod',p)}</b>${a&&c?` (arábica ${nf(sacas(a))} e canephora ${nf(sacas(c))} sacas)`:`, toda de ${a?'arábica':'canephora'}`}</li><li>Área colhida: <b>${nf(h)} ha</b> · área plantada: ${nf(l)} ha</li><li>Produtividade: <b>${nf(h?sacas(p)/h:0,1)} sacas/ha</b> (${nf(h?p*1000/h:0)} kg/ha)</li><li>Valor da produção: <b>R$ ${big(v*1000)}</b></li>${tLevel(T)!=='br'?`<li>Participação no café do Brasil: ${nf(p/br*100,p/br<.01?3:1)}%</li>`:''}${pv&&!isNaN(pv)?`<li>Peso do café no valor da produção agrícola local: ${nf(pv,1)}%</li>`:''}</ul>`;}
+function answerPam(o){
+  const m=o.metric,t=o.tipo,lab=LABEL[m]+(t==='Total'?' de café':` de café ${t.toLowerCase()}`),ys=o.anos.filter(y=>D[y]);
+  if(o.anos.length&&!ys.length)return A(`A série do painel vai de ${Y0} a ${Y1}; não há dados para ${o.anos.join(', ')}.`,'visao');
+  const Ts=targets(o),T0=Ts[0];
+  if(!o.rank&&!o.growth&&!o.when&&(o.all||T0.mun&&!/valor|produtividade|rendimento|area|produziu|producao|quantidade|sacas/.test(o.q)))
+    return A(Ts.map(T=>resumoPam(T,ys[0]||Y1)).join(''),'visao',SRC_PAM,T0);
+  // ranking de crescimento
+  if(o.rank&&o.growth&&!T0.mun&&(!T0.uf||o.munrank)){const a=ys.length>1?ys[0]:Y0,b=ys.length>1?ys.at(-1):Y1;
+    const units=T0.uf||o.munrank&&T0.uf?MUN.filter(x=>x.uf===T0.uf&&x.p).map(x=>({n:x.lab,T:{mun:x}})):(T0.reg?REG[T0.reg]:Object.values(SIG)).map(s=>({n:NAME[s],T:{uf:s}}));
+    const r=units.map(u=>({...u,a:valT(a,t,m,u.T),b:valT(b,t,m,u.T)})).filter(x=>x.a>0&&x.b>0).sort((x,y)=>o.low?(x.b-x.a)-(y.b-y.a):(y.b-y.a)-(x.b-x.a)).slice(0,5);
+    return A(`${T0.uf?'Municípios':'Estados'} que ${o.low?'mais perderam':'mais ganharam'} em ${lab}, de ${a} a ${b}:<ul>${r.map(x=>`<li><b>${esc(x.n)}</b>: ${fmtM(m,x.a)} → ${fmtM(m,x.b)} (${x.b>=x.a?'+':'−'}${nf(Math.abs(x.b/x.a-1)*100,0)}%)</li>`).join('')}</ul>`,'territorio',SRC_PAM,T0);}
+  if(o.when){const arr=YEARS.map(y=>({y,v:valT(y,t,m,T0)})).sort((x,y)=>o.low?x.v-y.v:y.v-x.v);
+    return A(`${cap(emN(T0))}, o ${o.low?'menor':'maior'} valor de ${lab} na série ${Y0}–${Y1} foi em <b>${arr[0].y}</b>: ${fmtM(m,arr[0].v)}. Em seguida: ${arr[1].y} (${fmtM(m,arr[1].v)}).`,'visao',SRC_PAM,T0);}
+  // ranking de estados ou municípios
+  if(o.rank&&!T0.mun&&!o.cmp&&(!T0.uf||o.munrank)&&!(o.brasil&&!o.munrank)){const y=ys[0]||Y1;
+    const units=o.munrank?MUN.filter(x=>x.p&&inT(x,T0)).map(x=>({n:x.lab,T:{mun:x}})):(T0.reg?REG[T0.reg]:Object.values(SIG)).map(s=>({n:NAME[s],T:{uf:s}}));
+    const ref=valT(y,t,m,T0),r=units.map(u=>({...u,v:valT(y,t,m,u.T)})).filter(x=>x.v>0).sort((a,b)=>o.low?a.v-b.v:b.v-a.v).slice(0,5);
+    return A(`${o.low?'Menores':'Maiores'} ${o.munrank?'municípios':'estados'} em ${lab}${tLevel(T0)!=='br'?' '+emN(T0):''}, ${y}:<ul>${r.map(x=>`<li><b>${esc(x.n)}</b>: ${fmtM(m,x.v)}${m==='yield'?'':` (${nf(x.v/ref*100,1)}%)`}</li>`).join('')}</ul>`,'territorio',SRC_PAM,T0);}
+  if(o.growth||ys.length>1&&!o.cmp){const a=ys.length>1?ys[0]:(ys[0]&&ys[0]!==Y1?ys[0]:Y0),b=ys.length>1?ys.at(-1):Y1;
+    return A(Ts.map(T=>{const va=valT(a,t,m,T),vb=valT(b,t,m,T);return `${esc(T.mun?T.mun.lab:tLabel(T))}: ${lab} foi de <b>${fmtM(m,va)}</b> em ${a} para <b>${fmtM(m,vb)}</b> em ${b}${va?` (${vb>=va?'+':'−'}${nf(Math.abs(vb/va-1)*100,1)}%)`:''}.`;}).join('<br>'),'visao',SRC_PAM,T0);}
+  const ylist=ys.length?ys:[Y1];
+  return A(Ts.map(T=>ylist.map(y=>{const v=valT(y,t,m,T),br=valT(y,t,m,{});
+    let s=`Em ${y}, ${esc(nome(T))} teve ${lab} de <b>${fmtM(m,v)}</b>`;
+    if(tLevel(T)!=='br'&&m!=='yield'&&br)s+=`, <b>${nf(v/br*100,v/br<.01?3:1)}%</b> do total nacional`;
+    if(m==='yield'&&tLevel(T)!=='br')s+=` (Brasil: ${nf(br,1)} sc/ha)`;
+    if(t==='Total'&&m==='prod'){const a=pamT(y,'Arábica','prod',T),c=pamT(y,'Canephora','prod',T);if(a&&c)s+=`. Arábica: ${fmtM('prod',a)}; canephora: ${fmtM('prod',c)}`;else if(a||c)s+=`, toda de ${a?'arábica':'canephora'}`;}
+    if(m==='prod'&&T.mun){const h=pamT(y,t,'area',T);if(h)s+=`. Área colhida de ${nf(h)} ha e produtividade de ${nf(sacas(v)/h,1)} sc/ha`;}
+    if(m==='yield'&&T.mun){const q=pamT(y,t,'prod',T),h=pamT(y,t,'area',T),vv=pamT(y,t,'valor',T);if(q&&h)s+=`. Foram ${fmtM('prod',q)} colhidas em ${nf(h)} ha${vv?`, valendo R$ ${big(vv*1000)}`:''}`;}
+    return s+'.';}).join('<br>')).join('<br>'),'visao',SRC_PAM+(ylist.includes(Y1)?` (${Y1} é a safra mais recente)`:''),T0);
+}
+function answerEst(o){const Ts=targets(o),T0=Ts[0];
+  if(o.rank&&!T0.mun&&(!T0.uf||o.munrank)){const k=o.tipo==='Arábica'?0:o.tipo==='Canephora'?1:/familiar/.test(o.q)?2:4;
+    const units=T0.uf||o.munrank?MUN.filter(m=>m.e&&inT(m,T0)).map(m=>({n:m.lab,v:m.e[k]})):(T0.reg?REG[T0.reg]:Object.values(SIG)).map(s=>({n:NAME[s],v:[estT({uf:s})].map(e=>[e.ar,e.cn,e.fam,e.nfam,e.tot][k])[0]}));
+    const r=units.sort((a,b)=>b.v-a.v).slice(0,5);
+    return A(`${T0.uf||o.munrank?'Municípios':'Estados'} com mais estabelecimentos${k===0?' de arábica':k===1?' de canephora':k===2?' familiares':''} de café${tLevel(T0)!=='br'?' '+emN(T0):''} (2017):<ul>${r.map(u=>`<li><b>${esc(u.n)}</b>: ${nf(u.v)}</li>`).join('')}</ul>`,'estabelecimentos',SRC_CENSO+', Tabela 6955',T0);}
+  return A(Ts.map(T=>{const e=estT(T);if(!e.tot)return `${cap(esc(nome(T)))} não tinha estabelecimentos com café no Censo 2017.`;
+    return `${cap(esc(nome(T)))} tinha <b>${nf(e.tot)}</b> estabelecimentos com café em 2017 (${nf(e.ar)} com arábica e ${nf(e.cn)} com canephora). Agricultura familiar: <b>${nf(e.fam)}</b> (${nf(e.fam/e.tot*100,1)}%).`;}).join('<br>'),'estabelecimentos',SRC_CENSO+', Tabela 6955',T0);}
+function answerSoc(o){const q=o.q,Ts=targets(o),T0=Ts[0];
+  if(/envelhec|sucess|jovens?|idos/.test(q))return A(Ts.map(T=>{const s=socT(T);return s.env==null?`Sem produtores com menos de 25 anos ${emN(T)} para calcular o índice.`:`${cap(emN(T))}, há <b>${nf(s.env,1)}</b> produtores com 65 anos ou mais para cada produtor com menos de 25 anos (Brasil: ${nf(socT({}).env,1)}).`;}).join('<br>'),'produtores',SRC_CENSO+', Tabela 6768',T0);
+  if(/idade|faixa/.test(q)){const s=socT(T0),i=s.a.map((x,i)=>[i,x[0]+x[1]]).sort((a,b)=>b[1]-a[1])[0][0];return A(`${cap(emN(T0))}, a faixa com mais produtores é <b>${mj.idades[i]}</b> (${nf(s.a[i][0]+s.a[i][1])} pessoas).<ul>${mj.idades.map((f,k)=>`<li>${f}: ${nf(s.a[k][0])} homens, ${nf(s.a[k][1])} mulheres</li>`).join('')}</ul>`,'produtores',SRC_CENSO+', Tabela 6768',T0);}
+  return A(Ts.map(T=>{const s=socT(T);if(!s.t)return `${cap(esc(nome(T)))} não tem estabelecimentos com café no Censo 2017.`;
+    return `${cap(emN(T))}${T.mun?'':' (municípios com café)'}, havia <b>${nf(s.t)}</b> produtores: ${nf(s.m)} mulheres (${nf(s.m/s.t*100,1)}%) e ${nf(s.h)} homens. Estimativa de estabelecimentos de café com mulheres à frente: <b>${nf(s.wa)}</b> no arábica e <b>${nf(s.wc)}</b> no canephora.`;}).join('<br>'),'produtores',SRC_CENSO+', Tabela 6768',T0);}
+function answerZarc(o){const md=zarc.media_semanas,nt=tLevel(targets(o)[0])!=='br'?' O protótipo ainda não tem o ZARC por município ou estado; os números são do Brasil.':'';
+  if(/janela/.test(o.q))return A(`Distribuição das combinações do ZARC por tipo de janela favorável: ${Object.entries(zarc.janelas).map(([k,v])=>`${k.toLowerCase()} ${nf(v,1)}%`).join(', ')}.${nt}`,'clima','ZARC/MAPA (valores aproximados no protótipo)');
+  const best=zarc.semanas.slice().sort((a,b)=>b.baixo-a.baixo).slice(0,3).map(w=>w.s);
+  return A(`Em média, o canephora tem <b>${nf(md.Canephora,2)}</b> semanas de baixo risco climático e o arábica <b>${nf(md['Arábica'],2)}</b>. As semanas com maior proporção de baixo risco são ${best.join(', ')} (decêndios do ZARC).${nt}`,'clima','ZARC/MAPA (valores aproximados no protótipo)');}
+function answerPub(o){
+  let termo='';const kws=emb.palavras.map(([w])=>w).filter(w=>norm(w)!=='cafe').sort((a,b)=>b.length-a.length);
+  for(const w of kws){if(o.rest.includes(' '+norm(w)+' ')){termo=w;break;}}
+  if(!termo)termo=o.rest.split(/\s+/).filter(w=>w.length>=4&&!STOP.has(w)&&!/^\d+$/.test(w)).join(' ');
+  const uni=Object.keys(emb.unidades).find(u=>o.q.includes(' '+norm(u.replace('Embrapa ',''))+' ')&&/unidade|embrapa/.test(o.q));
+  if(uni)termo=norm(termo).split(' ').filter(w=>!norm(uni).includes(w)).join(' ');
+  if(/autor/.test(o.q)&&o.rank)return A(`Autores com mais publicações sobre café:<ul>${Object.entries(emb.autores_top).slice(0,5).map(([a,n])=>`<li>${esc(a)}: ${n}</li>`).join('')}</ul>`,'pesquisa',SRC_EMB);
+  if(/unidade/.test(o.q)&&o.rank&&!termo)return A(`Unidades com mais publicações sobre café:<ul>${Object.entries(emb.unidades).slice(0,5).map(([a,n])=>`<li>${esc(a)}: ${n}</li>`).join('')}</ul>`,'pesquisa',SRC_EMB);
+  let r=filtPubs({termo,unidade:uni||''});
+  if(!r.length&&termo.includes(' ')){const best=termo.split(' ').map(w=>({w,r:filtPubs({termo:w,unidade:uni||''})})).sort((a,b)=>b.r.length-a.r.length)[0];termo=best.w;r=best.r;}
+  const ys=o.anos;if(ys.length)r=r.filter(p=>ys.length>1?p.y>=ys[0]&&p.y<=ys.at(-1):p.y===ys[0]);
+  if(!termo&&!uni&&!ys.length){const k=emb.kpi;return A(`A base reúne <b>${nf(k.pubs)}</b> publicações da Embrapa sobre café, de ${nf(k.autores)} autores (${nf(k.autores_embrapa)} da Embrapa e ${nf(k.autores_externos)} externos), em ${k.unidades} unidades. A que mais publica é a Embrapa Café (${nf(emb.unidades['Embrapa Café'])}).`,'pesquisa',SRC_EMB);}
+  const uc={};r.forEach(p=>uc[p.u]=(uc[p.u]||0)+1);const tu=Object.entries(uc).sort((a,b)=>b[1]-a[1])[0];
+  $('#p-q').value=termo;$('#p-uni').value=uni||'';shown=20;
+  return A(`Encontrei <b>${nf(r.length)}</b> publicações${termo?` com “${esc(termo)}” no título, autores ou palavras-chave`:''}${uni?` da ${esc(uni)}`:''}${ys.length?` em ${ys.join('–')}`:''}.${tu&&!uni?` A unidade com mais publicações nesse recorte é a ${esc(tu[0])} (${tu[1]}).`:''}${r.length?` Mais recentes:<ul>${r.slice(0,3).map(p=>`<li>${esc(p.t)} (${p.y})</li>`).join('')}</ul>`:''}`,'pesquisa',SRC_EMB);}
+function answerTec(){const tt={};emb.tecnologias.forEach(t=>tt[t.tipo]=(tt[t.tipo]||0)+1);
+  return A(`O painel lista <b>${emb.tecnologias.length}</b> soluções tecnológicas da Embrapa ligadas ao café: ${Object.entries(tt).map(([k,v])=>`${v} ${k.toLowerCase()}`).join(', ')}. Exemplos:<ul>${emb.tecnologias.slice(0,4).map(t=>`<li>${esc(t.n)} (${esc(t.u)})</li>`).join('')}</ul>`,'pesquisa',SRC_EMB);}
+const TABN={visao:'Visão geral',territorio:'Território',estabelecimentos:'Estabelecimentos',produtores:'Produtores',clima:'Clima (ZARC)',pesquisa:'Café na Embrapa'};
+function responder(raw){const o=parse(raw);
+  if(o.q.trim().length<3)return A('Escreva uma pergunta sobre os dados do painel.');
+  const AJUDA=`O painel cobre produção, área, valor e produtividade (IBGE/PAM ${Y0}–${Y1}, Brasil, regiões, estados e municípios), estabelecimentos e produtores (Censo Agropecuário 2017), risco climático (ZARC) e publicações e tecnologias da Embrapa.`;
+  if(o.fora&&o.topic==='pam')return A(`Esse dado não está no painel. ${AJUDA}`);
+  if(o.topic==='pam'&&!o.dados&&!o.locs.length&&!o.mun&&!o.reg&&!o.anos.length)return A(`Não entendi a pergunta. ${AJUDA} Tente, por exemplo: “qual a produtividade de Cruzília?”.`);
+  const fn={pam:answerPam,est:answerEst,soc:answerSoc,zarc:answerZarc,pub:answerPub,tec:answerTec}[o.topic];
+  try{return fn(o);}catch(e){console.error(e);return A('Não consegui montar a resposta para essa pergunta. Tente perguntar de outro jeito, citando o município, o estado, o ano ou o indicador.');}}
+const EX=['Qual a produtividade de Cruzília (MG)?','Quanto Minas Gerais produziu em 2025?','Quais os maiores municípios produtores do Espírito Santo?','Qual estado mais cresceu em canephora desde 2014?','Quantos estabelecimentos familiares há na Bahia?','Qual o índice de envelhecimento no Sudeste?','Quantas publicações tratam de ferrugem?'];
+function ask(q){q=q.trim();if(!q)return;openD();
+  const qd=document.createElement('div');qd.className='msg q';qd.textContent=q;convo.append(qd);
+  const a=responder(q),ad=document.createElement('div');ad.className='msg a ans';ad.style.whiteSpace='normal';
+  const T=a.T&&tLevel(a.T)!=='br'?a.T:null;
+  ad.innerHTML=a.html+(a.tab?`<button type="button" class="go">${T?`Ver ${esc(T.mun?T.mun.lab:tLabel(T))} na aba ${TABN[a.tab]}`:`Ver na aba ${TABN[a.tab]}`} →</button>`:'');
+  const b=ad.querySelector('.go');if(b)b.onclick=()=>{if(T)setTerr(T,false);go(a.tab);if(innerWidth<700)$('#d-x').click();};
+  convo.append(ad);ad.scrollIntoView({block:'end'});}
+$('#convo').insertAdjacentHTML('beforeend',`<div class="sugs light">${EX.map(e=>`<button type="button">${e}</button>`).join('')}</div>`);
+$$('.sugs button').forEach(b=>b.onclick=()=>ask(b.textContent));
+$('#hero-ask').onsubmit=e=>{e.preventDefault();ask($('#hero-q').value);$('#hero-q').value='';};
+$('#d-form').onsubmit=e=>{e.preventDefault();ask($('#d-q').value);$('#d-q').value='';};
+window.__responder=responder;window.__setTerr=setTerr;window.__MUN=MUN;
+})();
+
+</script>

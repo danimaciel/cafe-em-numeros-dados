@@ -1,0 +1,138 @@
+name: Atualizar dados do Café em Números
+
+# Todo dia 5, às 6h de Brasília (o Redape publica no dia 1º; a PAM sai uma vez por ano, em geral em setembro/outubro).
+# Também roda pelo botão "Run workflow" na aba Actions.
+on:
+  schedule:
+    - cron: "0 9 5 * *"
+  workflow_dispatch:
+    inputs:
+      gravar_tabela_real:
+        description: "Gravar nas tabelas oficiais do BigQuery? (sim/nao)"
+        default: "nao"
+
+permissions:
+  contents: write
+  id-token: write   # só usado se a credencial do Google for por Workload Identity
+
+concurrency:
+  group: atualizar-dados
+  cancel-in-progress: false
+
+env:
+  TEM_BQ: ${{ secrets.GCP_SA_KEY != '' }}
+  GRAVAR_TABELA_REAL: ${{ github.event.inputs.gravar_tabela_real || vars.GRAVAR_TABELA_REAL || 'nao' }}
+
+jobs:
+  atualizar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar pacotes
+        run: |
+          pip install -r requirements.txt
+          rm -f dados/metadados/*_relatorio.json dados/metadados/*_conferencia.json
+
+      - name: Credencial do Google (se configurada)
+        if: env.TEM_BQ == 'true'
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Versão atual das tabelas (BigQuery, se houver credencial; senão a do repositório)
+        if: env.TEM_BQ == 'true'
+        run: |
+          python scripts/bigquery.py baixar --tabela base_dashboard_3 --arquivo dados/bigquery/base_dashboard_3.csv.gz
+          python scripts/bigquery.py baixar --tabela autores --arquivo dados/bigquery/autores.parquet
+
+      # ---------------- IBGE: PAM ----------------
+      - name: Coletar PAM (SIDRA 5457)
+        id: pam
+        continue-on-error: true
+        run: python scripts/coletar_pam.py --periodo "last 3"
+
+      - name: Montar e conferir base_dashboard_3
+        id: pam_conf
+        if: steps.pam.outcome == 'success'
+        continue-on-error: true
+        run: |
+          if [ ! -f dados/bigquery/base_dashboard_3.csv.gz ]; then echo "::warning::sem a versão atual da base_dashboard_3 (exporte do BigQuery ou configure GCP_SA_KEY)"; exit 0; fi
+          python scripts/atualizar_pam.py
+          if [ -f dados/bigquery/base_dashboard_3.novo.csv.gz ]; then
+            python scripts/conferir.py --atual dados/bigquery/base_dashboard_3.csv.gz \
+              --nova dados/bigquery/base_dashboard_3.novo.csv.gz \
+              --chave ano,uf,tipo_cafe,indicador --valor valor --grupo ano \
+              --saida dados/metadados/pam_conferencia.json
+            echo "mudou=sim" >> "$GITHUB_OUTPUT"
+          fi
+
+      # ---------------- Embrapa: Redape ----------------
+      - name: Coletar publicações (Redape)
+        id: redape
+        continue-on-error: true
+        run: python scripts/coletar_redape.py coletar --destino dados/redape --bases publicacoes
+
+      - name: Montar e conferir autores
+        id: aut_conf
+        if: steps.redape.outcome == 'success'
+        continue-on-error: true
+        run: |
+          ARQ=$(ls -1 dados/redape/*/publicacoes-da-embrapa-*.csv 2>/dev/null | sort | tail -1)
+          if [ -z "$ARQ" ]; then echo "Sem exportação nova do Redape."; exit 0; fi
+          if [ ! -f dados/bigquery/autores.parquet ]; then echo "::warning::sem a tabela autores (fica fora do repositório público; precisa de GCP_SA_KEY)"; exit 0; fi
+          python scripts/atualizar_autores.py --redape "$ARQ"
+          if [ -f dados/bigquery/autores.novo.parquet ]; then
+            python scripts/conferir.py --atual dados/bigquery/autores.parquet \
+              --nova dados/bigquery/autores.novo.parquet \
+              --chave id,palavras_chave,autoria,id_autor --grupo ano_de_publicacao \
+              --saida dados/metadados/autores_conferencia.json
+            echo "mudou=sim" >> "$GITHUB_OUTPUT"
+          fi
+
+      # ---------------- BigQuery: teste sempre, oficial só se ligado ----------------
+      - name: Gravar no BigQuery
+        if: env.TEM_BQ == 'true'
+        run: |
+          if [ "${{ steps.pam_conf.outcome }}" = "success" ] && [ "${{ steps.pam_conf.outputs.mudou }}" = "sim" ]; then
+            python scripts/bigquery.py teste --tabela base_dashboard_3 --arquivo dados/bigquery/base_dashboard_3.novo.csv.gz
+            python scripts/bigquery.py real  --tabela base_dashboard_3 --arquivo dados/bigquery/base_dashboard_3.novo.csv.gz
+          fi
+          if [ "${{ steps.aut_conf.outcome }}" = "success" ] && [ "${{ steps.aut_conf.outputs.mudou }}" = "sim" ]; then
+            python scripts/bigquery.py teste --tabela autores --arquivo dados/bigquery/autores.novo.parquet
+            python scripts/bigquery.py real  --tabela autores --arquivo dados/bigquery/autores.novo.parquet
+          fi
+
+      - name: Trocar a versão atual pela nova (só o que passou na conferência)
+        run: |
+          if [ "${{ steps.pam_conf.outcome }}" = "success" ] && [ -f dados/bigquery/base_dashboard_3.novo.csv.gz ]; then
+            mv dados/bigquery/base_dashboard_3.novo.csv.gz dados/bigquery/base_dashboard_3.csv.gz
+          fi
+          if [ "${{ steps.aut_conf.outcome }}" = "success" ] && [ -f dados/bigquery/autores.novo.parquet ]; then
+            mv dados/bigquery/autores.novo.parquet dados/bigquery/autores.parquet
+          fi
+          rm -f dados/bigquery/*.novo.*
+
+      # ---------------- Página própria: arquivos estáticos ----------------
+      - name: Exportar arquivos da página
+        if: hashFiles('scripts/exportar_site.py') != ''
+        continue-on-error: true   # se a página recusar a versão nova, os dados do BigQuery seguem
+        run: python scripts/exportar_site.py
+
+      - name: Resumo
+        if: always()
+        run: python scripts/resumo.py >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Guardar no repositório
+        run: |
+          git config user.name "atualizacao-automatica"
+          git config user.email "actions@users.noreply.github.com"
+          git add dados site 2>/dev/null || true
+          if git diff --cached --quiet; then echo "Nada mudou."; exit 0; fi
+          git commit -m "Atualização automática dos dados ($(TZ=America/Sao_Paulo date +%Y-%m-%d))"
+          git pull --rebase && git push
