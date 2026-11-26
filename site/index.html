@@ -322,7 +322,7 @@ footer .wrap{display:grid;gap:8px;border-top:1px solid var(--line);padding-top:2
 <section class="ch" id="s-clima" data-page="clima"><div class="wrap">
   <div class="chhead">
     <div><div class="eyebrow">5 · Clima e risco</div><h2>Quando o clima favorece o plantio</h2></div>
-    <p>O <b>Zoneamento Agrícola de Risco Climático (ZARC)</b>, do Ministério da Agricultura com apoio técnico da Embrapa, usa séries de clima, solos e exigências da cultura para indicar períodos e locais de menor risco. <span class="pill warn">valores aproximados no protótipo</span></p>
+    <p>O <b>Zoneamento Agrícola de Risco Climático (ZARC)</b>, do Ministério da Agricultura com apoio técnico da Embrapa, usa séries de clima, solos e exigências da cultura para indicar períodos e locais de menor risco.</p>
   </div>
   <div class="card">
     <h3>Classe de risco ao longo das 36 semanas do ano</h3><p class="note">Percentual das combinações município × solo × fase em cada classe, por semana (decêndio do ZARC)</p>
@@ -334,7 +334,7 @@ footer .wrap{display:grid;gap:8px;border-top:1px solid var(--line);padding-top:2
     <div class="card"><h3>Janelas climáticas favoráveis</h3><p class="note">Distribuição das combinações por tipo de janela</p><div class="bars" id="c-jan"></div></div>
     <div class="card"><h3>Duração das janelas</h3><p class="note">Mil combinações por número de semanas de baixo risco</p><div class="bars" id="c-dur"></div></div>
   </div>
-  <p class="callout" style="margin-top:16px">Os resultados do ZARC consideram manejo adequado e não incorporam limitações de fertilidade do solo, pragas, doenças ou práticas de cultivo. Use como apoio à decisão, não como garantia de produtividade. Na versão final, este capítulo traz também o mapa municipal de baixo risco, o mapa das janelas e a consulta às <span id="z-comb"></span> combinações (município, solo, fase, janela).</p>
+  <p class="callout" style="margin-top:16px">Os resultados do ZARC consideram manejo adequado e não incorporam limitações de fertilidade do solo, pragas, doenças ou práticas de cultivo. Use como apoio à decisão, não como garantia de produtividade. O cálculo usa as <span id="z-comb"></span> combinações (município, solo, fase, janela).</p>
 </div></section>
 
 <!-- 6. PESQUISA -->
@@ -378,7 +378,7 @@ footer .wrap{display:grid;gap:8px;border-top:1px solid var(--line);padding-top:2
 
 <footer><div class="wrap">
   <div><b>Fontes:</b> IBGE/SIDRA (PAM, Tabela 5457; Censo Agropecuário 2017, Tabelas 6955 e 6768); MAPA/ZARC; Embrapa (Redape e base de autores).</div>
-  <div>Protótipo de página própria do painel Café em Números. No protótipo, 2014–2024 da PAM usam os valores anteriores à revisão do IBGE de outubro de 2026 e 2025 vem da carga de teste; o ZARC usa valores aproximados.</div>
+  <div>Página própria do painel Café em Números. Fontes: IBGE (PAM, tabela 5457, e Censo Agropecuário 2017), Embrapa (Redape) e ZARC/MAPA, calculado nas mesmas tabelas do painel oficial. De 2014 a 2024 a PAM tem os mesmos valores do painel oficial; 2025 é o ano novo. Atualização automática todo dia 5.</div>
   <div id="f-upd"></div>
 </div></footer>
 
@@ -483,7 +483,7 @@ function setSeg(id,key,cb){$$(`#${id} button`).forEach(b=>b.onclick=()=>{$$(`#${
 setSeg('m-mode',v=>st.mode=v,()=>mapa());
 setSeg('m-ind',v=>st.ind=v,()=>{mapa();ranking();});
 function banner(){const lv=tLevel(),b=$('#tbanner');
-  const sem={clima:'O ZARC ainda não tem recorte territorial no protótipo: os números abaixo são do Brasil. Na versão final, vêm por município do BigQuery.',pesquisa:'As publicações não têm localização geográfica; os números abaixo valem para toda a Embrapa.'}[page];
+  const sem={clima:'Os números do ZARC abaixo são do Brasil, como no painel oficial.',pesquisa:'As publicações não têm localização geográfica; os números abaixo valem para toda a Embrapa.'}[page];
   if(lv==='br'&&!sem){b.hidden=true;return;}
   const tsel=page==='pesquisa'&&$('#p-cl').value?` <b>Filtrando pelo tema ${esc(CL[$('#p-cl').value])}.</b> <button type="button" class="clr" id="cl-clear">Ver todos os temas</button>`:'';
   b.hidden=false;$('#tbanner-t').innerHTML=(lv!=='br'?`Recorte: <b>${esc(tLabel())}</b>${terr.mun?` · ${NAME[terr.uf]} · ${terr.reg}`:terr.uf?` · ${terr.reg}`:''}. `:'')+(sem?esc(sem):'')+tsel;const cc=$('#cl-clear');if(cc)cc.onclick=()=>{$('#p-cl').value='';shown=20;pesquisa();pubs();banner();};}
@@ -880,10 +880,10 @@ function answerSoc(o){const q=o.q,Ts=targets(o),T0=Ts[0];
   if(/idade|faixa/.test(q)){const s=socT(T0),i=s.a.map((x,i)=>[i,x[0]+x[1]]).sort((a,b)=>b[1]-a[1])[0][0];return A(`${cap(emN(T0))}, a faixa com mais produtores é <b>${mj.idades[i]}</b> (${nf(s.a[i][0]+s.a[i][1])} pessoas).<ul>${mj.idades.map((f,k)=>`<li>${f}: ${nf(s.a[k][0])} homens, ${nf(s.a[k][1])} mulheres</li>`).join('')}</ul>`,'produtores',SRC_CENSO+', Tabela 6768',T0);}
   return A(Ts.map(T=>{const s=socT(T);if(!s.t)return `${cap(esc(nome(T)))} não tem estabelecimentos com café no Censo 2017.`;
     return `${cap(emN(T))}${T.mun?'':' (municípios com café)'}, havia <b>${nf(s.t)}</b> produtores: ${nf(s.m)} mulheres (${nf(s.m/s.t*100,1)}%) e ${nf(s.h)} homens. Estimativa de estabelecimentos de café com mulheres à frente: <b>${nf(s.wa)}</b> no arábica e <b>${nf(s.wc)}</b> no canephora.`;}).join('<br>'),'produtores',SRC_CENSO+', Tabela 6768',T0);}
-function answerZarc(o){const md=zarc.media_semanas,nt=tLevel(targets(o)[0])!=='br'?' O protótipo ainda não tem o ZARC por município ou estado; os números são do Brasil.':'';
-  if(/janela/.test(o.q))return A(`Distribuição das combinações do ZARC por tipo de janela favorável: ${Object.entries(zarc.janelas).map(([k,v])=>`${k.toLowerCase()} ${nf(v,1)}%`).join(', ')}.${nt}`,'clima','ZARC/MAPA (valores aproximados no protótipo)');
+function answerZarc(o){const md=zarc.media_semanas,nt=tLevel(targets(o)[0])!=='br'?' Os números do ZARC são do Brasil.':'';
+  if(/janela/.test(o.q))return A(`Distribuição das combinações do ZARC por tipo de janela favorável: ${Object.entries(zarc.janelas).map(([k,v])=>`${k.toLowerCase()} ${nf(v,1)}%`).join(', ')}.${nt}`,'clima','ZARC/MAPA');
   const best=zarc.semanas.slice().sort((a,b)=>b.baixo-a.baixo).slice(0,3).map(w=>w.s);
-  return A(`Em média, o canephora tem <b>${nf(md.Canephora,2)}</b> semanas de baixo risco climático e o arábica <b>${nf(md['Arábica'],2)}</b>. As semanas com maior proporção de baixo risco são ${best.join(', ')} (decêndios do ZARC).${nt}`,'clima','ZARC/MAPA (valores aproximados no protótipo)');}
+  return A(`Em média, o canephora tem <b>${nf(md.Canephora,2)}</b> semanas de baixo risco climático e o arábica <b>${nf(md['Arábica'],2)}</b>. As semanas com maior proporção de baixo risco são ${best.join(', ')} (decêndios do ZARC).${nt}`,'clima','ZARC/MAPA');}
 function answerPub(o){
   let termo='';const kws=emb.palavras.map(([w])=>w).filter(w=>norm(w)!=='cafe').sort((a,b)=>b.length-a.length);
   for(const w of kws){if(o.rest.includes(' '+norm(w)+' ')){termo=w;break;}}

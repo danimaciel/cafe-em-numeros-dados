@@ -72,10 +72,11 @@ def main():
     rows = q(cli, f"""SELECT CAST(n_semanas_baixo AS INT64) w, categoria_janela c, COUNT(DISTINCT municipio) n
                       FROM {J} WHERE categoria_janela LIKE 'Janela%' GROUP BY 1, 2""")
     rows.sort(key=lambda r: -r["n"])
-    top, outros = rows[:9], {}
-    for r in rows[9:]:
-        k = r["c"].replace("Janela ", "")
-        outros[k] = outros.get(k, 0) + r["n"]
+    top = rows[:9]
+    # "Outros": municípios distintos nas demais durações, por tipo de janela
+    fora = " OR ".join(f"(CAST(n_semanas_baixo AS INT64) = {r['w']} AND categoria_janela = '{r['c']}')" for r in top)
+    outros = {r["c"].replace("Janela ", ""): r["n"] for r in q(cli, f"""SELECT categoria_janela c, COUNT(DISTINCT municipio) n
+        FROM {J} WHERE categoria_janela LIKE 'Janela%' AND NOT ({fora}) GROUP BY 1""")}
     duracao = [[str(r["w"]), r["c"].replace("Janela ", ""), r["n"]] for r in top]
     duracao += [["Outros", k, n] for k, n in sorted(outros.items(), key=lambda z: -z[1])]
 
