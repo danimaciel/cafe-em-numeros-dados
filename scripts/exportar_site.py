@@ -260,7 +260,8 @@ def main():
     for nome, obj in novo.items():
         gravar(obj, saida / nome)
     shutil.copyfile(fixos / 'uf.geojson', saida / 'uf.geojson')
-    shutil.copyfile(fixos / 'zarc.json', saida / 'zarc.json')
+    zr = Path('dados/bigquery/zarc_resumo.json')  # calculado no BigQuery por exportar_zarc.py
+    shutil.copyfile(zr if zr.exists() else fixos / 'zarc.json', saida / 'zarc.json')
     agora = datetime.now(timezone(timedelta(hours=-3)))
     k = novo['embrapa.json']['kpi']
     gravar({'atualizado_em': agora.strftime('%d/%m/%Y'),
