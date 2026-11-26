@@ -69,7 +69,7 @@ def main():
     media = {nome(r["t"]): round(r["m"], 2) for r in rows if r["t"]}
 
     # duração: municípios distintos por semanas de baixo risco e tipo de janela
-    rows = q(cli, f"""SELECT CAST(n_semanas_baixo AS INT64) w, categoria_janela c, COUNT(DISTINCT municipio_uf) n
+    rows = q(cli, f"""SELECT CAST(n_semanas_baixo AS INT64) w, categoria_janela c, COUNT(DISTINCT municipio) n
                       FROM {J} WHERE categoria_janela LIKE 'Janela%' GROUP BY 1, 2""")
     rows.sort(key=lambda r: -r["n"])
     top, outros = rows[:9], {}
