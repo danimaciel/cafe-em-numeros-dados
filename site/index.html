@@ -753,7 +753,7 @@ function pesquisa(){
   $('#p-cl').innerHTML='<option value="">Todos os temas</option>'+emb.clusters.map(c=>`<option value="${c.id}">${c.id}. ${esc(c.nome)}</option>`).join('');
   $('#p-uni').value=keepU;$('#p-cl').value=keepC;
   const tt={};emb.tecnologias.forEach(t=>tt[t.tipo]=(tt[t.tipo]||0)+1);
-  $('#tech-n').textContent=`${emb.tecnologias.length} soluções com café no nome ou nas palavras-chave, de ${new Set(emb.tecnologias.map(t=>t.u)).size} unidades`;
+  $('#tech-n').textContent=`${emb.tecnologias.length} soluções tecnológicas da Embrapa ligadas ao café, de ${new Set(emb.tecnologias.map(t=>t.u)).size} unidades`;
   bars($('#c-techtipo'),Object.entries(tt).sort((a,b)=>b[1]-a[1]).map(([l,v])=>({l,v,c:'var(--gold)'})));
   $('#c-tech').innerHTML=emb.tecnologias.map(t=>`<a class="tech" ${/^https:\/\//.test(t.url||'')?`href="${esc(t.url)}" target="_blank" rel="noopener"`:''}><b>${esc(t.n)}</b><span>${esc(t.tipo)} · ${esc(t.u)}</span></a>`).join('');
 }
