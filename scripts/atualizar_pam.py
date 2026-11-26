@@ -38,12 +38,17 @@ COLUNAS = ["ano", "uf", "tipo_cafe", "indicador", "unidade", "valor", "municipio
 GEO = ["uf", "municipio", "sigla_uf", "estado", "regiao", "localizacao"]
 
 
+# municípios que o IBGE renomeou depois da carga original: nome novo no SIDRA -> nome na tabela
+RENOMEADOS = {"Arez (RN)": "Arês (RN)", "Assú (RN)": "Açu (RN)", "São Luiz do Anauá (RR)": "São Luiz (RR)"}
+
+
 def chave_sidra(linha):
     """Nome do território no formato da coluna `uf` da tabela: 'Cruzília (MG)', 'Minas Gerais', 'Brasil'."""
     if linha.nivel != "municipio":
         return linha.territorio
     nome, sigla = linha.territorio.rsplit(" - ", 1)
-    return f"{nome} ({sigla})"
+    k = f"{nome} ({sigla})"
+    return RENOMEADOS.get(k, k)
 
 
 def geo_nova(linha):
