@@ -1,0 +1,69 @@
+{
+ "anos_na_tabela": [
+  2014,
+  2024
+ ],
+ "anos_coletados": [
+  2023,
+  2024,
+  2025
+ ],
+ "revisoes_ibge_nao_aplicadas": {
+  "valores_diferentes": 27,
+  "producao": [
+   {
+    "ano": 2024,
+    "local": "Brasil",
+    "tipo": "Arábica",
+    "tabela": 2393732.0,
+    "ibge": 2393487.0
+   },
+   {
+    "ano": 2024,
+    "local": "Brasil",
+    "tipo": "Canephora",
+    "tabela": 993992.0,
+    "ibge": 988935.0
+   },
+   {
+    "ano": 2024,
+    "local": "Rondônia",
+    "tipo": "Canephora",
+    "tabela": 170232.0,
+    "ibge": 165175.0
+   },
+   {
+    "ano": 2024,
+    "local": "Paraná",
+    "tipo": "Arábica",
+    "tabela": 40206.0,
+    "ibge": 39961.0
+   }
+  ]
+ },
+ "anos_novos": [
+  2025
+ ],
+ "2025": {
+  "linhas": 89536,
+  "municipios_ibge": 5564,
+  "municipios_novos_fora_do_molde": [
+   "Arez (RN)",
+   "Assú (RN)",
+   "Boa Esperança do Norte (MT)",
+   "São Luiz do Anauá (RR)"
+  ],
+  "linhas_do_molde_sem_valor_no_ibge": 816,
+  "valores_vazios_ibge_viraram_0": 752,
+  "valores_em_sigilo": 0,
+  "producao_brasil_t": {
+   "Arábica": 2230589.0,
+   "Canephora": 1253765.0
+  }
+ },
+ "situacao": "anos acrescentados: [2025]",
+ "linhas": {
+  "antes": 984192,
+  "depois": 1073728
+ }
+}

@@ -1,0 +1,12 @@
+{
+  "publicacoes": {
+    "mes": "2026-11",
+    "ids_redape": [
+      23376,
+      23378
+    ],
+    "arquivo": "dados/redape/2026-11/publicacoes-da-embrapa-2026-11.csv",
+    "linhas": 185198,
+    "coletado_em": "2026-11-26T14:44:22"
+  }
+}
