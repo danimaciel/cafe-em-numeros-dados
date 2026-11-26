@@ -63,12 +63,22 @@ def main():
     esquema = cli.get_table(oficial).schema
 
     if a.acao == "baixar":
-        d = cli.query(f"SELECT * FROM `{oficial}`").to_dataframe()
+        origem = oficial
+        # Enquanto a tabela oficial não recebe as atualizações, a versão de teste é a mais completa:
+        # parte dela (se ainda existir e não tiver menos linhas que a oficial) para não perder o que já foi acrescentado.
+        if os.environ.get("GRAVAR_TABELA_REAL") != "sim":
+            try:
+                t = cli.get_table(f"{PROJETO}.{TESTE}.{a.tabela}_teste")
+                if t.num_rows >= cli.get_table(oficial).num_rows:
+                    origem = f"{PROJETO}.{TESTE}.{a.tabela}_teste"
+            except Exception:
+                pass
+        d = cli.query(f"SELECT * FROM `{origem}`").to_dataframe()
         if a.arquivo.endswith(".parquet"):
             d.to_parquet(a.arquivo, index=False)
         else:
             d.to_csv(a.arquivo, index=False)
-        print(f"{oficial}: {len(d)} linhas -> {a.arquivo}")
+        print(f"{origem}: {len(d)} linhas -> {a.arquivo}")
         return
 
     d = ler(a.arquivo, esquema)

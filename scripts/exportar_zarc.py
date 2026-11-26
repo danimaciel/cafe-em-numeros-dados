@@ -39,6 +39,7 @@ def main():
         t = c.lower()
         m = re.match(r"\s*(\d)", t)
         d = m.group(1) if m else ""
+        t = t.replace("_", " ")
         chave[c] = ("nr" if d == "1" or "não rec" in t or "nao rec" in t else
                     "baixo" if d == "2" or "baixo" in t else
                     "medio" if d == "3" or "médio" in t or "medio" in t else
@@ -64,7 +65,8 @@ def main():
     rows = q(cli, f"""SELECT tipo_cafe t, AVG(n_semanas_baixo) m, AVG(IF(n_semanas_baixo > 0, n_semanas_baixo, NULL)) m_pos
                       FROM {J} GROUP BY 1""")
     diag["media"] = {r["t"]: [r["m"], r["m_pos"]] for r in rows}
-    media = {r["t"]: round(r["m"], 2) for r in rows if r["t"]}
+    nome = lambda t: "Arábica" if "rab" in t.lower() else "Canephora" if ("aneph" in t.lower() or "conil" in t.lower()) else t
+    media = {nome(r["t"]): round(r["m"], 2) for r in rows if r["t"]}
 
     # duração: municípios distintos por semanas de baixo risco e tipo de janela
     rows = q(cli, f"""SELECT CAST(n_semanas_baixo AS INT64) w, categoria_janela c, COUNT(DISTINCT municipio_uf) n
