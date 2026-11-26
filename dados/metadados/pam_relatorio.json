@@ -1,7 +1,7 @@
 {
  "anos_na_tabela": [
   2014,
-  2024
+  2025
  ],
  "anos_coletados": [
   2023,
@@ -41,26 +41,6 @@
    }
   ]
  },
- "anos_novos": [
-  2025
- ],
- "2025": {
-  "linhas": 89488,
-  "municipios_ibge": 5564,
-  "municipios_novos_fora_do_molde": [
-   "Boa Esperança do Norte (MT)"
-  ],
-  "linhas_do_molde_sem_valor_no_ibge": 768,
-  "valores_vazios_ibge_viraram_0": 752,
-  "valores_em_sigilo": 0,
-  "producao_brasil_t": {
-   "Arábica": 2230589.0,
-   "Canephora": 1253765.0
-  }
- },
- "situacao": "anos acrescentados: [2025]",
- "linhas": {
-  "antes": 984192,
-  "depois": 1073680
- }
+ "anos_novos": [],
+ "situacao": "sem ano novo no IBGE; tabela mantida"
 }
