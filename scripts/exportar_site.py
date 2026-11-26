@@ -135,7 +135,7 @@ def censo(M, fixos):
         pm = T.Mulheres / T.Total if T.Total else 0
         M[k]['s'] = dict(t=int(T.Total), h=int(T.Homens), m=int(T.Mulheres),
                          a=[[int(g.loc[a].Homens), int(g.loc[a].Mulheres)] if a in g.index else [0, 0] for a in IDADES],
-                         wa=int(round(pm * ee[0])), wc=int(round(pm * ee[1])))
+                         wa=int(math.floor(pm * ee[0] + 0.5)), wc=int(math.floor(pm * ee[1] + 0.5)))  # .5 para cima, como no Looker
 
 
 # ---------------------------------------------------------------- Embrapa
@@ -152,7 +152,8 @@ def embrapa(arq, fixos):
         for w in dict.fromkeys(x.strip('.').capitalize() for x in ws):
             if 2 < len(w) < 40:
                 kw[w] = kw.get(w, 0) + 1
-    emb = pa[pa.tipo_autor == 'Autor Embrapa'].drop_duplicates('nome')
+    # mesmas contas do painel oficial (Looker): gênero por empregado distinto (id_autor)
+    emb = a[a.tipo_autor == 'Autor Embrapa'].drop_duplicates('id_autor')
     u = u.assign(ano=pd.to_numeric(u.ano_de_publicacao, errors='coerce'), tema=pd.to_numeric(u.topicomax, errors='coerce'))
     u = u[u.ano.notna()]
     rec = u.sort_values('ano', ascending=False)
@@ -161,14 +162,17 @@ def embrapa(arq, fixos):
     return {
         'kpi': {'pubs': int(len(u)), 'autores': int(pa.autoria.nunique()),
                 'autores_embrapa': int(pa[pa.tipo_autor == 'Autor Embrapa'].autoria.nunique()),
-                'autores_externos': int(pa[pa.tipo_autor == 'Autor externo'].autoria.nunique()),
-                'media_autores': round(float(pa.groupby('id').size().mean()), 2),
+                # como no painel oficial: listas de autores distintas das publicações com autor externo
+                'autores_externos': int(a[a.tipo_autor == 'Autor externo'].autores.nunique()),
+                # como no painel oficial: autores distintos / publicações
+                'media_autores': round(pa.autoria.nunique() / len(u), 2),
                 'unidades': int(u.unidade.nunique()), 'ano_max': int(u.ano.max())},
         'anos': {str(int(k)): int(v) for k, v in u.ano.value_counts().sort_index().items()},
         'genero': {'Homem': int((emb.genero == 'Male').sum()), 'Mulher': int((emb.genero == 'Female').sum())},
         'tipos': {k: int(v) for k, v in u.tipo_de_publicacao.value_counts().items()},
         'unidades': {k: int(v) for k, v in u.unidade.value_counts().items()},
-        'autores_top': {k: int(v) for k, v in pa.autoria.value_counts().head(12).items()},
+        # como no painel oficial: linhas da tabela (publicação x palavra-chave x autor) por autoria
+        'autores_top': {k: int(v) for k, v in a.autoria.value_counts().head(12).items()},
         'clusters': [dict(id=int(k), nome=TEMAS.get(int(k), f'Tema {int(k)}'), n=int(v)) for k, v in temas.items()],
         'palavras': sorted(kw.items(), key=lambda z: -z[1])[:45],
         'pubs': [dict(t=texto(r.titulo), a=texto(r.autores), u=texto(r.unidade), y=int(r.ano),

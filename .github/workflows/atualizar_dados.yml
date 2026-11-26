@@ -50,6 +50,9 @@ jobs:
         run: |
           python scripts/bigquery.py baixar --tabela base_dashboard_3 --arquivo dados/bigquery/base_dashboard_3.csv.gz
           python scripts/bigquery.py baixar --tabela autores --arquivo dados/bigquery/autores.parquet
+          # ZARC (dados públicos do MAPA, só leitura) para a aba Clima da página
+          python scripts/bigquery.py baixar --tabela zarc --arquivo dados/bigquery/zarc.parquet
+          python scripts/bigquery.py baixar --tabela zarc_janela --arquivo dados/bigquery/zarc_janela.parquet
 
       # ---------------- IBGE: PAM ----------------
       - name: Coletar PAM (SIDRA 5457)

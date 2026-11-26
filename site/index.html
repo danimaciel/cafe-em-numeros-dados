@@ -1,5 +1,9 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Café em Números</title>
-<meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..800&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&display=swap">
 <style>
@@ -624,8 +628,9 @@ function estab(){
   const mode=$('#est-mode button[aria-pressed="true"]').dataset.v;
   $('#est-leg').innerHTML=mode==='sp'?'<span><i class="sw" style="background:var(--arabica)"></i>Arábica</span><span><i class="sw" style="background:var(--canephora)"></i>Canephora</span><span>· % dos estabelecimentos</span>':'<span><i class="sw" style="background:var(--gold)"></i>Familiar</span><span><i class="sw" style="background:var(--muted)"></i>Não familiar</span>';
   const byMun=lv==='uf'||lv==='mun';
-  let units=byMun?MUN.filter(m=>m.uf===terr.uf&&m.e).map(m=>({l:m.n,m,ar:m.e[0],cn:m.e[1],fam:m.e[2],nfam:m.e[3],tot:m.e[4],prod17:munV(m,2017,'Total','prod')}))
-    :scopeUF().map(s=>{const e=estT({uf:s});return{l:NAME[s],s,...e,prod17:get(2017,NAME[s],'Total','prod')};}).filter(u=>u.tot>0);
+  const YP=st.ano==='all'?Y1:+st.ano;
+  let units=byMun?MUN.filter(m=>m.uf===terr.uf&&m.e).map(m=>({l:m.n,m,ar:m.e[0],cn:m.e[1],fam:m.e[2],nfam:m.e[3],tot:m.e[4],prod17:munV(m,YP,'Total','prod')}))
+    :scopeUF().map(s=>{const e=estT({uf:s});return{l:NAME[s],s,...e,prod17:get(YP,NAME[s],'Total','prod')};}).filter(u=>u.tot>0);
   units.sort((a,b)=>b.tot-a.tot);
   $('#est-h1').textContent=byMun?`Perfil dos municípios ${deN({uf:terr.uf})}`:'Perfil por estado';
   let top=units.slice(0,12);if(terr.mun){const i=units.findIndex(u=>u.m===terr.mun);if(i>=12)top=[...top.slice(0,11),units[i]];}
@@ -633,7 +638,7 @@ function estab(){
   bars($('#c-estuf'),top.map(u=>mode==='sp'?{l:u.l,hi:u.m&&u.m===terr.mun,m:u.m,s:u.s,parts:[{v:u.ar/u.tot*100,c:'var(--arabica)'},{v:u.cn/u.tot*100,c:'var(--canephora)'}],t:nf(u.tot),tip:`<b>${esc(u.l)}</b><br>Arábica ${nf(u.ar)} (${nf(u.ar/u.tot*100,1)}%)<br>Canephora ${nf(u.cn)} (${nf(u.cn/u.tot*100,1)}%)`}
     :{l:u.l,hi:u.m&&u.m===terr.mun,m:u.m,s:u.s,parts:[{v:u.fam/u.tot*100,c:'var(--gold)'},{v:u.nfam/u.tot*100,c:'var(--muted)'}],t:nf(u.fam/u.tot*100,0)+'%',tip:`<b>${esc(u.l)}</b><br>Familiar ${nf(u.fam)}<br>Não familiar ${nf(u.nfam)}`}),{max:100,click:pick});
   // dispersão
-  $('#sc-note').textContent=`Cada ponto é um ${byMun?'município '+deN({uf:terr.uf}):'estado'} (escala logarítmica). Produção da PAM 2017, ano do Censo.`;
+  $('#sc-note').textContent=`Cada ponto é um ${byMun?'município '+deN({uf:terr.uf}):'estado'} (escala logarítmica). Produção da PAM ${YP}, ano mais recente.`;
   const el=$('#c-scatter'),W=Math.max(280,el.clientWidth),H=280,m={l:62,r:14,t:10,b:34};
   const pts=units.filter(u=>u.tot>0&&u.prod17>0),lx=v=>Math.log10(v);
   if(!pts.length){el.innerHTML='<p class="note">Sem dados para este recorte.</p>';}else{
@@ -648,12 +653,12 @@ function estab(){
   pts.forEach((p,k)=>{const sel=p.m&&p.m===terr.mun;s+=`<circle data-k="${k}" cx="${xs(p.tot)}" cy="${ys(p.prod17)}" r="${sel?8:byMun?4:6}" fill="${p.cn>p.ar?'var(--canephora)':'var(--arabica)'}" fill-opacity="${sel?1:.7}" stroke="${sel?'var(--gold)':'none'}" stroke-width="2.5" style="cursor:pointer"/>`;
     if(!byMun&&big3.includes(p)||sel)s+=`<text x="${xs(p.tot)+9}" y="${ys(p.prod17)+4}" style="fill:var(--ink)">${esc(p.s||p.l)}</text>`;});
   el.innerHTML=s+'</svg>';
-  el.querySelectorAll('circle').forEach(c=>{const p=pts[+c.dataset.k];c.onmousemove=e=>showTip(e,`<b>${esc(p.l)}</b><br>${nf(p.tot)} estabelecimentos<br>${nf(p.prod17)} t em 2017`);c.onmouseleave=hideTip;c.onclick=()=>{hideTip();pick(p);};});}
+  el.querySelectorAll('circle').forEach(c=>{const p=pts[+c.dataset.k];c.onmousemove=e=>showTip(e,`<b>${esc(p.l)}</b><br>${nf(p.tot)} estabelecimentos<br>${nf(p.prod17)} t em ${YP}`);c.onmouseleave=hideTip;c.onclick=()=>{hideTip();pick(p);};});}
   const tm=MUN.filter(m=>inT(m,lv==='mun'?{uf:terr.uf}:terr)&&m.e).sort((a,b)=>b.e[4]-a.e[4]).slice(0,12);
   $('#estmun-n').textContent=`Arábica e canephora · ${lv==='mun'?NAME[terr.uf]:L}`;
   bars($('#c-estmun'),tm.map(m=>({l:m.lab,m,hi:m===terr.mun,parts:[{v:m.e[0],c:'var(--arabica)'},{v:m.e[1],c:'var(--canephora)'}],t:nf(m.e[4]),tip:`<b>${esc(m.lab)}</b><br>Arábica ${nf(m.e[0])}<br>Canephora ${nf(m.e[1])}<br>Familiar ${nf(m.e[2])}`})),{click:it=>setTerr({mun:it.m})});
   $('#est-h2').textContent=byMun?`Estabelecimentos e produção nos municípios ${deN({uf:terr.uf})}`:'Estabelecimentos e produção por estado';
-  $('#t-est').innerHTML=`<thead><tr><th>${byMun?'Município':'Estado'}</th><th>Arábica</th><th>Canephora</th><th>Familiar</th><th>Produção 2017 (t)</th></tr></thead><tbody>`+units.slice(0,byMun?60:30).map(u=>`<tr${u.m&&u.m===terr.mun?' style="font-weight:700"':''}><td>${esc(u.l)}</td><td>${nf(u.ar)}</td><td>${nf(u.cn)}</td><td>${nf(u.fam/u.tot*100,0)}%</td><td>${nf(u.prod17)}</td></tr>`).join('')+'</tbody>'+(byMun&&units.length>60?`<caption class="src" style="caption-side:bottom;text-align:left">Mostrando os 60 municípios com mais estabelecimentos de ${units.length}.</caption>`:'');
+  $('#t-est').innerHTML=`<thead><tr><th>${byMun?'Município':'Estado'}</th><th>Arábica</th><th>Canephora</th><th>Familiar</th><th>Produção ${YP} (t)</th></tr></thead><tbody>`+units.slice(0,byMun?60:30).map(u=>`<tr${u.m&&u.m===terr.mun?' style="font-weight:700"':''}><td>${esc(u.l)}</td><td>${nf(u.ar)}</td><td>${nf(u.cn)}</td><td>${nf(u.fam/u.tot*100,0)}%</td><td>${nf(u.prod17)}</td></tr>`).join('')+'</tbody>'+(byMun&&units.length>60?`<caption class="src" style="caption-side:bottom;text-align:left">Mostrando os 60 municípios com mais estabelecimentos de ${units.length}.</caption>`:'');
 }
 setSeg('est-mode',()=>{},estab);
 
@@ -920,3 +925,5 @@ window.__responder=responder;window.__setTerr=setTerr;window.__MUN=MUN;
 })();
 
 </script>
+
+</html>
