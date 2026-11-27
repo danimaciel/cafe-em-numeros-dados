@@ -9,9 +9,13 @@ BigQuery e só o resumo é baixado. Mesmas contas do painel oficial:
   combinacoes    linhas de zarc_janela
 
 Saída: dados/bigquery/zarc_resumo.json (o exportar_site.py usa este arquivo no lugar do aproximado).
+
+Também grava site/dados/zarc_comb.json: uma linha por combinação (município x espécie x fase x solo x manejo)
+com a classe de risco das 36 semanas e a janela de zarc_janela, para a página filtrar como o painel oficial.
 """
 import json
 import os
+import unicodedata
 import re
 from pathlib import Path
 
@@ -89,5 +93,81 @@ def main():
                               ensure_ascii=False, default=str))
 
 
+def sem_acento(t):
+    return unicodedata.normalize("NFKD", str(t)).encode("ascii", "ignore").decode().lower().strip()
+
+
+CLASSE_SQL = """CASE
+      WHEN LOWER(classe_risco) LIKE '%rec%' OR STARTS_WITH(TRIM(classe_risco), '1') THEN 1
+      WHEN LOWER(classe_risco) LIKE '%baix%' OR STARTS_WITH(TRIM(classe_risco), '2') THEN 2
+      WHEN LOWER(classe_risco) LIKE '%m_dio%' OR LOWER(classe_risco) LIKE '%medio%' OR STARTS_WITH(TRIM(classe_risco), '3') THEN 3
+      WHEN LOWER(classe_risco) LIKE '%alt%' OR STARTS_WITH(TRIM(classe_risco), '4') THEN 4
+      ELSE 0 END"""
+
+
+def centroides():
+    """Centro de cada município (Base dos Dados, pública). Se não der, o mapa usa só os que a página já conhece."""
+    try:
+        cli = bigquery.Client(project=PROJETO, location="US")
+        rows = q(cli, """SELECT d.nome n, d.sigla_uf uf, ST_Y(ST_CENTROID(m.geometria)) la, ST_X(ST_CENTROID(m.geometria)) lo
+                         FROM `basedosdados.br_bd_diretorios_brasil.municipio` d
+                         JOIN `basedosdados.br_geobr_mapas.municipio` m USING (id_municipio)""")
+        return {(sem_acento(r["n"]), r["uf"]): (round(r["la"], 3), round(r["lo"], 3)) for r in rows}
+    except Exception as e:  # noqa: BLE001
+        print("::warning::centroides dos municípios indisponíveis:", str(e)[:200])
+        return {}
+
+
+def combinacoes(cli, saida=Path("site/dados/zarc_comb.json")):
+    chave = "uf, municipio, tipo_cafe, fase, solo, outros_manejos"
+    sem = q(cli, f"""SELECT {chave}, ARRAY_AGG(STRUCT(s, c, n) ORDER BY s) w FROM (
+          SELECT {chave}, CAST(semana AS INT64) s, MAX({CLASSE_SQL}) c, COUNT(*) n FROM {Z}
+          GROUP BY {chave}, s) GROUP BY {chave}""")
+    jan = q(cli, f"""SELECT {chave}, ANY_VALUE(categoria_janela) cat, ANY_VALUE(CAST(n_semanas_baixo AS INT64)) ns,
+                     ANY_VALUE(CAST(semana_inicio_baixo AS INT64)) ini, COUNT(*) n FROM {J} GROUP BY {chave}""")
+    k = lambda r: tuple(r[x] for x in ["uf", "municipio", "tipo_cafe", "fase", "solo", "outros_manejos"])
+    jd = {k(r): r for r in jan}
+    dims = {d: sorted({r[c] or "" for r in sem}) for d, c in
+            [("esp", "tipo_cafe"), ("fase", "fase"), ("solo", "solo"), ("man", "outros_manejos")]}
+    dims["cat"] = sorted({r["cat"] or "" for r in jan})
+    cen = centroides()
+    try:
+        import csv
+        for r in csv.DictReader(open("dados/site_fixos/municipios.csv", encoding="utf-8")):
+            cen.setdefault((sem_acento(r.get("nome") or r.get("municipio") or ""), r.get("uf") or r.get("sigla_uf")),
+                           (float(r["lat"]), float(r["lon"])))
+    except Exception as e:  # noqa: BLE001
+        print("::warning::municipios.csv:", str(e)[:120])
+    mun, mi = [], {}
+    c = []
+    dup = sem_jan = 0
+    for r in sorted(sem, key=lambda r: (r["uf"] or "", r["municipio"] or "")):
+        m = (r["municipio"], r["uf"])
+        if m not in mi:
+            la, lo = cen.get((sem_acento(r["municipio"]), r["uf"]), (None, None))
+            mi[m] = len(mun)
+            mun.append([r["municipio"], r["uf"], la, lo])
+        w = ["0"] * 36
+        for x in r["w"]:
+            if x["s"] and 1 <= x["s"] <= 36:
+                w[x["s"] - 1] = str(x["c"])
+            dup += (x["n"] or 0) > 1
+        j = jd.get(k(r))
+        sem_jan += j is None
+        c.append([mi[m], dims["esp"].index(r["tipo_cafe"] or ""), dims["fase"].index(r["fase"] or ""),
+                  dims["solo"].index(r["solo"] or ""), dims["man"].index(r["outros_manejos"] or ""), "".join(w),
+                  dims["cat"].index(j["cat"] or "") if j else -1, j["ns"] if j else None])
+    out = {"v": 1, "dims": dims, "mun": mun, "c": c, "janela_linhas": sum(r["n"] for r in jan)}
+    saida.parent.mkdir(parents=True, exist_ok=True)
+    saida.write_text(json.dumps(out, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    print("ZARC combinações:", json.dumps({"combinacoes": len(c), "municipios": len(mun),
+          "com_coordenada": sum(1 for x in mun if x[2] is not None), "semanas_duplicadas": dup,
+          "sem_janela": sem_jan, "janela_linhas": out["janela_linhas"], "dims": dims}, ensure_ascii=False))
+
+
 if __name__ == "__main__":
     main()
+    try:
+        combinacoes(bigquery.Client(project=PROJETO, location="southamerica-east1"))
+    except Exception as e:  # noqa: BLE001
+        print("::warning::combinações do ZARC não foram geradas:", str(e)[:300])
