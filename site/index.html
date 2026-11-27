@@ -143,6 +143,10 @@ th{font-weight:600;font-size:.74rem;text-transform:uppercase;letter-spacing:.05e
 .pub span{color:var(--muted);font-size:.82rem}
 .more{margin-top:10px;border:1px solid var(--line);background:transparent;color:var(--ink);border-radius:7px;padding:6px 12px;cursor:pointer}
 .callout{border-left:3px solid var(--gold);padding:4px 0 4px 14px;color:var(--muted);font-size:.92rem;max-width:75ch}
+.zf{display:flex;flex-direction:column;gap:3px;font-size:.78rem;color:var(--muted)}
+.zf select{min-width:150px}
+#z-kpi{margin-bottom:16px}
+#z-map svg circle{cursor:pointer}
 .weeks{display:grid;grid-template-columns:repeat(36,minmax(0,1fr));gap:2px;height:180px;align-items:end}
 .weeks div{display:flex;flex-direction:column-reverse;height:100%;border-radius:2px;overflow:hidden}
 .weeks i{display:block;width:100%}
@@ -324,6 +328,18 @@ footer .wrap{display:grid;gap:8px;border-top:1px solid var(--line);padding-top:2
     <div><div class="eyebrow">5 · Clima e risco</div><h2>Quando o clima favorece o plantio</h2></div>
     <p>O <b>Zoneamento Agrícola de Risco Climático (ZARC)</b>, do Ministério da Agricultura com apoio técnico da Embrapa, usa séries de clima, solos e exigências da cultura para indicar períodos e locais de menor risco.</p>
   </div>
+  <div class="row" id="z-flt" style="gap:10px;flex-wrap:wrap;margin:0 0 14px" hidden>
+    <label class="zf">Café (espécie) <select id="z-esp"></select></label>
+    <label class="zf">Fase <select id="z-fase"></select></label>
+    <label class="zf">Solo <select id="z-solo"></select></label>
+    <label class="zf">Tipo de manejo <select id="z-man"></select></label>
+    <button type="button" class="clr" id="z-clr" hidden>Limpar filtros do ZARC</button>
+  </div>
+  <div class="stats" id="z-kpi" hidden></div>
+  <div class="card" id="z-mapcard" hidden style="margin-bottom:16px">
+    <h3>Proporção de semanas de baixo risco por município</h3><p class="note">Cada ponto é um município. Quanto mais verde, maior a parte das 36 semanas classificada como baixo risco (20%).</p>
+    <div id="z-map"></div><div class="legend" id="z-map-leg"></div>
+  </div>
   <div class="card">
     <h3>Classe de risco ao longo das 36 semanas do ano</h3><p class="note">Percentual das combinações município × solo × fase em cada classe, por semana (decêndio do ZARC)</p>
     <div class="legend"><span><i class="sw" style="background:var(--risk1)"></i>Não recomendado</span><span><i class="sw" style="background:var(--risk2)"></i>Baixo risco (20%)</span><span><i class="sw" style="background:var(--risk3)"></i>Médio</span><span><i class="sw" style="background:var(--risk4)"></i>Alto</span></div>
@@ -332,9 +348,9 @@ footer .wrap{display:grid;gap:8px;border-top:1px solid var(--line);padding-top:2
   <div class="grid g3" style="margin-top:16px">
     <div class="card"><h3>Semanas de baixo risco</h3><p class="note">Média por espécie</p><div id="z-med"></div></div>
     <div class="card"><h3>Janelas climáticas favoráveis</h3><p class="note">Distribuição das combinações por tipo de janela</p><div class="bars" id="c-jan"></div></div>
-    <div class="card"><h3>Duração das janelas</h3><p class="note">Mil combinações por número de semanas de baixo risco</p><div class="bars" id="c-dur"></div></div>
+    <div class="card"><h3>Duração das janelas</h3><p class="note">Municípios por número de semanas de baixo risco</p><div class="bars" id="c-dur"></div></div>
   </div>
-  <p class="callout" style="margin-top:16px">Os resultados do ZARC consideram manejo adequado e não incorporam limitações de fertilidade do solo, pragas, doenças ou práticas de cultivo. Use como apoio à decisão, não como garantia de produtividade. O cálculo usa as <span id="z-comb"></span> combinações (município, solo, fase, janela).</p>
+  <p class="callout" style="margin-top:16px">Os resultados do ZARC consideram manejo adequado e não incorporam limitações de fertilidade do solo, pragas, doenças ou práticas de cultivo. Use como apoio à decisão, não como garantia de produtividade. O cálculo usa as <span id="z-comb"></span> combinações (município, espécie, fase, solo e manejo).</p>
 </div></section>
 
 <!-- 6. PESQUISA -->
@@ -483,7 +499,7 @@ function setSeg(id,key,cb){$$(`#${id} button`).forEach(b=>b.onclick=()=>{$$(`#${
 setSeg('m-mode',v=>st.mode=v,()=>mapa());
 setSeg('m-ind',v=>st.ind=v,()=>{mapa();ranking();});
 function banner(){const lv=tLevel(),b=$('#tbanner');
-  const sem={clima:'Os números do ZARC abaixo são do Brasil, como no painel oficial.',pesquisa:'As publicações não têm localização geográfica; os números abaixo valem para toda a Embrapa.'}[page];
+  const sem={clima:ZC?'':'Os números do ZARC abaixo são do Brasil, como no painel oficial.',pesquisa:'As publicações não têm localização geográfica; os números abaixo valem para toda a Embrapa.'}[page];
   if(lv==='br'&&!sem){b.hidden=true;return;}
   const tsel=page==='pesquisa'&&$('#p-cl').value?` <b>Filtrando pelo tema ${esc(CL[$('#p-cl').value])}.</b> <button type="button" class="clr" id="cl-clear">Ver todos os temas</button>`:'';
   b.hidden=false;$('#tbanner-t').innerHTML=(lv!=='br'?`Recorte: <b>${esc(tLabel())}</b>${terr.mun?` · ${NAME[terr.uf]} · ${terr.reg}`:terr.uf?` · ${terr.reg}`:''}. `:'')+(sem?esc(sem):'')+tsel;const cc=$('#cl-clear');if(cc)cc.onclick=()=>{$('#p-cl').value='';shown=20;pesquisa();pubs();banner();};}
@@ -700,7 +716,7 @@ function produtores(){
 }
 
 /* ---------- clima ---------- */
-function clima(){
+function climaFixo(){
   $('#c-weeks').innerHTML=zarc.semanas.map(w=>`<div data-s="${w.s}"><i style="height:${w.nr}%;background:var(--risk1)"></i><i style="height:${w.baixo}%;background:var(--risk2)"></i><i style="height:${w.medio}%;background:var(--risk3)"></i><i style="height:${w.alto}%;background:var(--risk4)"></i></div>`).join('');
   $$('#c-weeks > div').forEach(d=>{const w=zarc.semanas[d.dataset.s-1];d.onmousemove=e=>showTip(e,`<b>Semana ${w.s}</b><br>Não recomendado ${nf(w.nr,1)}%<br>Baixo risco ${nf(w.baixo,1)}%<br>Médio ${nf(w.medio,1)}%<br>Alto ${nf(w.alto,1)}%`);d.onmouseleave=hideTip;});
   $('#c-wkax').innerHTML=zarc.semanas.map(w=>`<span>${w.s}</span>`).join('');
@@ -711,6 +727,65 @@ function clima(){
   const cc={ampla:'var(--risk2)',moderada:'var(--gold)',restrita:'var(--risk1)'};
   bars($('#c-dur'),zarc.duracao.map(([s,j,v])=>({l:`${s} ${s==='1'?'semana':s==='Outros'?'('+j+')':'semanas'}`,v:v/1e3,c:cc[j],t:nf(v/1e3,2)})));
   $('#z-comb').textContent=nf(zarc.combinacoes);
+}
+
+/* ---------- clima: ZARC por combinação (município × espécie × fase × solo × manejo) ---------- */
+let ZC=null,zcLoad=null;const zf={esp:'',fase:'',solo:'',man:''};
+const ZNOME={Arabica:'Arábica',Canephora:'Canephora',Conilon:'Conilon',Implantacao:'Implantação',Producao:'Produção'};
+const zn=v=>ZNOME[v]||(v===v.toUpperCase()?v.charAt(0)+v.slice(1).toLowerCase():v);
+function zcarregar(){if(zcLoad)return zcLoad;zcLoad=J('zarc_comb.json').then(d=>{
+    d.mun.forEach(m=>{m.k=norm(m[0])+'|'+m[1];m.reg=S2R[m[1]];});
+    ['esp','fase','solo','man'].forEach(k=>{const el=$('#z-'+k);el.innerHTML='<option value="">Todos</option>'+d.dims[k].map((v,i)=>`<option value="${i}">${esc(zn(v))}</option>`).join('');
+      el.onchange=()=>{zf[k]=el.value;clima();};});
+    $('#z-clr').onclick=()=>{Object.keys(zf).forEach(k=>{zf[k]='';$('#z-'+k).value='';});clima();};
+    ZC=d;}).catch(()=>{ZC=false;});return zcLoad;}
+function zInT(m,T=terr){return T.mun?m.k===norm(T.mun.n)+'|'+T.mun.uf:T.uf?m[1]===T.uf:T.reg?m.reg===T.reg:true;}
+function zSel(T=terr,useT=true){const M=ZC.mun,f=['esp','fase','solo','man'].map(k=>zf[k]===''?-1:+zf[k]);
+  return ZC.c.filter(c=>(f[0]<0||c[1]===f[0])&&(f[1]<0||c[2]===f[1])&&(f[2]<0||c[3]===f[2])&&(f[3]<0||c[4]===f[3])&&(!useT||zInT(M[c[0]],T)));}
+function clima(){
+  if(ZC===null){$('#c-weeks').innerHTML='<p class="note">Carregando o ZARC…</p>';zcarregar().then(()=>{if(page==='clima'){clima();banner();}});return;}
+  if(ZC===false){$('#z-flt').hidden=$('#z-kpi').hidden=$('#z-mapcard').hidden=true;climaFixo();return;}
+  $('#z-flt').hidden=$('#z-kpi').hidden=$('#z-mapcard').hidden=false;$('#z-clr').hidden=!Object.values(zf).some(v=>v!=='');
+  const D=ZC.dims,M=ZC.mun,all=zSel(terr,false),sel=all.filter(c=>zInT(M[c[0]]));
+  const W=Array.from({length:36},()=>[0,0,0,0]);sel.forEach(c=>{const w=c[5];for(let i=0;i<36;i++){const k=w.charCodeAt(i)-49;if(k>=0&&k<4)W[i][k]++;}});
+  const sem=W.map((x,i)=>{const t=x[0]+x[1]+x[2]+x[3]||1;return{s:i+1,nr:x[0]/t*100,baixo:x[1]/t*100,medio:x[2]/t*100,alto:x[3]/t*100,n:t};});
+  $('#c-weeks').innerHTML=sel.length?sem.map(w=>`<div data-s="${w.s}"><i style="height:${w.nr}%;background:var(--risk1)"></i><i style="height:${w.baixo}%;background:var(--risk2)"></i><i style="height:${w.medio}%;background:var(--risk3)"></i><i style="height:${w.alto}%;background:var(--risk4)"></i></div>`).join(''):'<p class="note">Sem combinações do ZARC para este recorte.</p>';
+  $$('#c-weeks > div').forEach(d=>{const w=sem[d.dataset.s-1];d.onmousemove=e=>showTip(e,`<b>Semana ${w.s}</b><br>Não recomendado ${nf(w.nr,1)}%<br>Baixo risco ${nf(w.baixo,1)}%<br>Médio ${nf(w.medio,1)}%<br>Alto ${nf(w.alto,1)}%`);d.onmouseleave=hideTip;});
+  $('#c-wkax').innerHTML=sem.map(w=>`<span>${w.s}</span>`).join('');
+  const muns=new Set(sel.map(c=>c[0])),lowW=W.reduce((s,x)=>s+x[1],0),totW=W.reduce((s,x)=>s+x[0]+x[1]+x[2]+x[3],0);
+  const jn=sel.filter(c=>c[6]>=0),jA=jn.filter(c=>/^janela/i.test(D.cat[c[6]]));
+  $('#z-kpi').innerHTML=stat('Combinações ZARC',nf(sel.length),'município × espécie × fase × solo × manejo')+stat('Municípios',nf(muns.size),'com zoneamento para café')+stat('Semanas de baixo risco',totW?nf(lowW/totW*100,1)+'%':'–','das semanas das combinações')+stat('Com janela favorável',sel.length?nf(jA.length/sel.length*100,1)+'%':'–','das combinações têm semanas de baixo risco');
+  const md={};D.esp.forEach((e,i)=>{const l=jn.filter(c=>c[1]===i&&c[7]!=null);if(l.length)md[e]=l.reduce((s,c)=>s+c[7],0)/l.length;});
+  const cor=e=>/rab/i.test(e)?'arabica':'canephora',ks=Object.keys(md).sort((a,b)=>md[b]-md[a]);
+  $('#z-med').innerHTML=ks.length?ks.map(e=>`<div class="stats" style="border-top-color:var(--${cor(e)})"><div class="stat"><span class="l">${esc(zn(e))}</span><span class="v ${cor(e)==='arabica'?'ar':'cn'}">${nf(md[e],2)}</span><span class="s">semanas de baixo risco, em média</span></div></div>`).join('')+(ks.length===2?`<p class="src">Diferença média entre as espécies: <b>${nf(md[ks[0]]-md[ks[1]],2)} semanas</b>.</p>`:''):'<p class="note">Sem dados para este recorte.</p>';
+  const jc={'Janela ampla':'var(--risk2)','Janela moderada':'var(--gold)','Janela restrita':'var(--risk1)'},jt={};jn.forEach(c=>{const k=D.cat[c[6]];jt[k]=(jt[k]||0)+1;});
+  const jl=Object.entries(jt).filter(([k])=>/^janela/i.test(k)).sort((a,b)=>b[1]-a[1]);
+  bars($('#c-jan'),jl.map(([k,v])=>({l:k,v:v/jn.length*100,c:jc[k],t:nf(v/jn.length*100,1)+'%',tip:`<b>${esc(k)}</b><br>${nf(v)} combinações`})),{max:Math.max(40,...jl.map(([,v])=>v/jn.length*100))});
+  const cc={ampla:'var(--risk2)',moderada:'var(--gold)',restrita:'var(--risk1)'},g={};
+  jA.forEach(c=>{const k=c[7]+'|'+D.cat[c[6]].replace(/^Janela /,'');(g[k]=g[k]||new Set()).add(c[0]);});
+  const top=Object.entries(g).sort((a,b)=>b[1].size-a[1].size).slice(0,9),tk=new Set(top.map(x=>x[0])),out={};
+  jA.forEach(c=>{const j=D.cat[c[6]].replace(/^Janela /,''),k=c[7]+'|'+j;if(!tk.has(k))(out[j]=out[j]||new Set()).add(c[0]);});
+  const dur=top.map(([k,v])=>{const [n,j]=k.split('|');return[n,j,v.size];}).concat(Object.entries(out).sort((a,b)=>b[1].size-a[1].size).map(([j,v])=>['Outros',j,v.size]));
+  bars($('#c-dur'),dur.map(([n,j,v])=>({l:n==='Outros'?`Outros (${j})`:`${n} sem. (${j})`,v,c:cc[j],t:nf(v)})));
+  $('#z-comb').textContent=nf(ZC.c.length);
+  zmapa(all);
+}
+function zmapa(all){
+  const el=$('#z-map'),Wd=Math.max(280,el.clientWidth),lv=tLevel(),T=terr.mun?{uf:terr.uf}:terr,P=proj(Wd,scopeBox(T)),ps=paths(P),sco=scopeUF(T),M=ZC.mun;
+  const agg=new Map();all.forEach(c=>{const m=M[c[0]];if(m[2]==null||!zInT(m,T))return;let a=agg.get(c[0]);if(!a)agg.set(c[0],a=[0,0]);const w=c[5];for(let i=0;i<36;i++){const k=w.charCodeAt(i);if(k>48){a[1]++;if(k===50)a[0]++;}}});
+  const r=lv==='br'?2.1:lv==='reg'?3:4.2;
+  let s=`<svg viewBox="0 0 ${Wd} ${P.H}" width="100%" role="img" aria-label="Mapa do ZARC por município">`;
+  ps.forEach((d,i)=>{const on=lv==='br'||sco.includes(SIG[UF[i]]);s+=`<path d="${d}" fill="var(--soft)" fill-opacity="${on?1:.35}" stroke="var(--surface)" stroke-width=".8"/>`;});
+  const pts=[...agg.entries()].map(([i,a])=>({i,m:M[i],p:a[1]?a[0]/a[1]:0}));pts.sort((a,b)=>a.p-b.p);
+  const selK=terr.mun?norm(terr.mun.n)+'|'+terr.mun.uf:'';
+  pts.forEach(o=>{const [x,y]=P.p(o.m[3],o.m[2]);const hi=o.m.k===selK;s+=`<circle data-i="${o.i}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${hi?r*2.2:r}" fill="color-mix(in oklab, var(--risk2) ${Math.round(o.p*100)}%, var(--risk1))" fill-opacity=".85"${hi?' stroke="var(--gold)" stroke-width="2.5"':''}/>`;});
+  el.innerHTML=s+'</svg>';
+  const byI=new Map(pts.map(o=>[o.i,o]));
+  el.querySelectorAll('circle').forEach(c=>{const o=byI.get(+c.dataset.i),mm=MUN.find(x=>x.k===norm(o.m[0])&&x.uf===o.m[1]);
+    c.onmousemove=e=>showTip(e,`<b>${esc(o.m[0])} (${o.m[1]})</b><br>${nf(o.p*100,1)}% das semanas com baixo risco${mm?'<br>Clique para filtrar a página':''}`);c.onmouseleave=hideTip;
+    if(mm)c.onclick=()=>{hideTip();setTerr({mun:mm});};});
+  const semC=M.filter(m=>m[2]==null).length;
+  $('#z-map-leg').innerHTML=`<span>0%</span><span style="display:inline-block;width:120px;height:8px;border-radius:4px;background:linear-gradient(90deg,var(--risk1),var(--risk2))"></span><span>100% das semanas com baixo risco</span>`+(semC?`<span>· ${nf(semC)} municípios sem coordenada não aparecem no mapa</span>`:'');
 }
 
 /* ---------- pesquisa ---------- */
