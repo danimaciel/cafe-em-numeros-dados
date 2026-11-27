@@ -623,7 +623,7 @@ function munCard(){
 /* ---------- estabelecimentos ---------- */
 function estab(){
   const b=estT(),lv=tLevel(),L=tLabel();
-  $('#est-title').textContent=b.tot?`${nf(b.tot)} estabelecimentos com café ${emN(terr)}`:`Nenhum estabelecimento com café em ${L}`;
+  $('#est-title').innerHTML=b.tot?`${nf(b.tot)} estabelecimentos com café ${emN(terr)}`:`Nenhum estabelecimento com café em ${esc(L)}`;
   $('#est-stats').innerHTML=[stat('Estabelecimentos com café',nf(b.tot),'Censo Agropecuário 2017'),stat('Com arábica',nf(b.ar),b.tot?nf(b.ar/b.tot*100,1)+'% do total':''),stat('Com canephora',nf(b.cn),b.tot?nf(b.cn/b.tot*100,1)+'% do total':''),stat('Agricultura familiar',b.tot?nf(b.fam/b.tot*100,2)+'%':'–',nf(b.fam)+' estabelecimentos')].join('');
   const mode=$('#est-mode button[aria-pressed="true"]').dataset.v;
   $('#est-leg').innerHTML=mode==='sp'?'<span><i class="sw" style="background:var(--arabica)"></i>Arábica</span><span><i class="sw" style="background:var(--canephora)"></i>Canephora</span><span>· % dos estabelecimentos</span>':'<span><i class="sw" style="background:var(--gold)"></i>Familiar</span><span><i class="sw" style="background:var(--muted)"></i>Não familiar</span>';
