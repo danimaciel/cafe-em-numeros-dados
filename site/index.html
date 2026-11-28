@@ -143,9 +143,15 @@ th{font-weight:600;font-size:.74rem;text-transform:uppercase;letter-spacing:.05e
 .pub span{color:var(--muted);font-size:.82rem}
 .more{margin-top:10px;border:1px solid var(--line);background:transparent;color:var(--ink);border-radius:7px;padding:6px 12px;cursor:pointer}
 .callout{border-left:3px solid var(--gold);padding:4px 0 4px 14px;color:var(--muted);font-size:.92rem;max-width:75ch}
+.zbar{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px 14px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 16px;margin:0 0 16px}
+.zbar-t{font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);align-self:center;margin-right:6px}
 .zf{display:flex;flex-direction:column;gap:3px;font-size:.78rem;color:var(--muted)}
-.zf select{min-width:150px}
-#z-kpi{margin-bottom:16px}
+.zf select{min-width:140px}
+.zside{display:grid;gap:16px;align-content:start;min-width:0}
+.z2{grid-template-columns:1fr 1fr;border-top:0;margin:0}
+.z2 .stat{padding:10px 10px 10px 0}
+#z-map svg{display:block;margin:0 auto;max-width:100%}
+@media (max-width:560px){.zf{flex:1 1 calc(50% - 7px)}.zf select{min-width:0;width:100%}}
 #z-map svg circle{cursor:pointer}
 .weeks{display:grid;grid-template-columns:repeat(36,minmax(0,1fr));gap:2px;height:180px;align-items:end}
 .weeks div{display:flex;flex-direction:column-reverse;height:100%;border-radius:2px;overflow:hidden}
@@ -328,25 +334,30 @@ footer .wrap{display:grid;gap:8px;border-top:1px solid var(--line);padding-top:2
     <div><div class="eyebrow">5 · Clima e risco</div><h2>Quando o clima favorece o plantio</h2></div>
     <p>O <b>Zoneamento Agrícola de Risco Climático (ZARC)</b>, do Ministério da Agricultura com apoio técnico da Embrapa, usa séries de clima, solos e exigências da cultura para indicar períodos e locais de menor risco.</p>
   </div>
-  <div class="row" id="z-flt" style="gap:10px;flex-wrap:wrap;margin:0 0 14px" hidden>
+  <div class="zbar" id="z-flt" hidden>
+    <span class="zbar-t">Filtros do ZARC</span>
     <label class="zf">Café (espécie) <select id="z-esp"></select></label>
     <label class="zf">Fase <select id="z-fase"></select></label>
     <label class="zf">Solo <select id="z-solo"></select></label>
     <label class="zf">Tipo de manejo <select id="z-man"></select></label>
-    <button type="button" class="clr" id="z-clr" hidden>Limpar filtros do ZARC</button>
+    <button type="button" class="clr" id="z-clr" hidden>Limpar</button>
   </div>
-  <div class="stats" id="z-kpi" hidden></div>
-  <div class="card" id="z-mapcard" hidden style="margin-bottom:16px">
-    <h3>Proporção de semanas de baixo risco por município</h3><p class="note">Cada ponto é um município. Quanto mais verde, maior a parte das 36 semanas classificada como baixo risco (20%).</p>
-    <div id="z-map"></div><div class="legend" id="z-map-leg"></div>
+  <div class="grid g64" style="margin-bottom:16px">
+    <div class="card" id="z-mapcard" hidden>
+      <h3>Proporção de semanas de baixo risco por município</h3><p class="note">Cada ponto é um município. Quanto mais verde, maior a parte das 36 semanas com baixo risco (20%).</p>
+      <div id="z-map"></div><div class="legend" id="z-map-leg"></div>
+    </div>
+    <div class="zside">
+      <div class="card" id="z-kpicard" hidden><h3>Resumo do recorte</h3><div class="stats z2" id="z-kpi"></div></div>
+      <div class="card"><h3>Semanas de baixo risco</h3><p class="note">Média por espécie</p><div id="z-med"></div></div>
+    </div>
   </div>
   <div class="card">
     <h3>Classe de risco ao longo das 36 semanas do ano</h3><p class="note">Percentual das combinações município × solo × fase em cada classe, por semana (decêndio do ZARC)</p>
     <div class="legend"><span><i class="sw" style="background:var(--risk1)"></i>Não recomendado</span><span><i class="sw" style="background:var(--risk2)"></i>Baixo risco (20%)</span><span><i class="sw" style="background:var(--risk3)"></i>Médio</span><span><i class="sw" style="background:var(--risk4)"></i>Alto</span></div>
     <div class="weeks" id="c-weeks"></div><div class="wkax" id="c-wkax"></div>
   </div>
-  <div class="grid g3" style="margin-top:16px">
-    <div class="card"><h3>Semanas de baixo risco</h3><p class="note">Média por espécie</p><div id="z-med"></div></div>
+  <div class="grid g2" style="margin-top:16px">
     <div class="card"><h3>Janelas climáticas favoráveis</h3><p class="note">Distribuição das combinações por tipo de janela</p><div class="bars" id="c-jan"></div></div>
     <div class="card"><h3>Duração das janelas</h3><p class="note">Municípios por número de semanas de baixo risco</p><div class="bars" id="c-dur"></div></div>
   </div>
@@ -744,8 +755,8 @@ function zSel(T=terr,useT=true){const M=ZC.mun,f=['esp','fase','solo','man'].map
   return ZC.c.filter(c=>(f[0]<0||c[1]===f[0])&&(f[1]<0||c[2]===f[1])&&(f[2]<0||c[3]===f[2])&&(f[3]<0||c[4]===f[3])&&(!useT||zInT(M[c[0]],T)));}
 function clima(){
   if(ZC===null){$('#c-weeks').innerHTML='<p class="note">Carregando o ZARC…</p>';zcarregar().then(()=>{if(page==='clima'){clima();banner();}});return;}
-  if(ZC===false){$('#z-flt').hidden=$('#z-kpi').hidden=$('#z-mapcard').hidden=true;climaFixo();return;}
-  $('#z-flt').hidden=$('#z-kpi').hidden=$('#z-mapcard').hidden=false;$('#z-clr').hidden=!Object.values(zf).some(v=>v!=='');
+  if(ZC===false){$('#z-flt').hidden=$('#z-kpicard').hidden=$('#z-mapcard').hidden=true;climaFixo();return;}
+  $('#z-flt').hidden=$('#z-kpicard').hidden=$('#z-mapcard').hidden=false;$('#z-clr').hidden=!Object.values(zf).some(v=>v!=='');
   const D=ZC.dims,M=ZC.mun,all=zSel(terr,false),sel=all.filter(c=>zInT(M[c[0]]));
   const W=Array.from({length:36},()=>[0,0,0,0]);sel.forEach(c=>{const w=c[5];for(let i=0;i<36;i++){const k=w.charCodeAt(i)-49;if(k>=0&&k<4)W[i][k]++;}});
   const sem=W.map((x,i)=>{const t=x[0]+x[1]+x[2]+x[3]||1;return{s:i+1,nr:x[0]/t*100,baixo:x[1]/t*100,medio:x[2]/t*100,alto:x[3]/t*100,n:t};});
@@ -754,7 +765,7 @@ function clima(){
   $('#c-wkax').innerHTML=sem.map(w=>`<span>${w.s}</span>`).join('');
   const muns=new Set(sel.map(c=>c[0])),lowW=W.reduce((s,x)=>s+x[1],0),totW=W.reduce((s,x)=>s+x[0]+x[1]+x[2]+x[3],0);
   const jn=sel.filter(c=>c[6]>=0),jA=jn.filter(c=>/^janela/i.test(D.cat[c[6]]));
-  $('#z-kpi').innerHTML=stat('Combinações ZARC',nf(sel.length),'município × espécie × fase × solo × manejo')+stat('Municípios',nf(muns.size),'com zoneamento para café')+stat('Semanas de baixo risco',totW?nf(lowW/totW*100,1)+'%':'–','das semanas das combinações')+stat('Com janela favorável',sel.length?nf(jA.length/sel.length*100,1)+'%':'–','das combinações têm semanas de baixo risco');
+  $('#z-kpi').innerHTML=stat('Combinações',nf(sel.length),'município × espécie × fase × solo × manejo')+stat('Municípios',nf(muns.size),'com zoneamento')+stat('Semanas de baixo risco',totW?nf(lowW/totW*100,1)+'%':'–','do total de semanas')+stat('Com janela favorável',sel.length?nf(jA.length/sel.length*100,1)+'%':'–','das combinações');
   const md={};D.esp.forEach((e,i)=>{const l=jn.filter(c=>c[1]===i&&c[7]!=null);if(l.length)md[e]=l.reduce((s,c)=>s+c[7],0)/l.length;});
   const cor=e=>/rab/i.test(e)?'arabica':'canephora',ks=Object.keys(md).sort((a,b)=>md[b]-md[a]);
   $('#z-med').innerHTML=ks.length?ks.map(e=>`<div class="stats" style="border-top-color:var(--${cor(e)})"><div class="stat"><span class="l">${esc(zn(e))}</span><span class="v ${cor(e)==='arabica'?'ar':'cn'}">${nf(md[e],2)}</span><span class="s">semanas de baixo risco, em média</span></div></div>`).join('')+(ks.length===2?`<p class="src">Diferença média entre as espécies: <b>${nf(md[ks[0]]-md[ks[1]],2)} semanas</b>.</p>`:''):'<p class="note">Sem dados para este recorte.</p>';
@@ -771,9 +782,9 @@ function clima(){
   zmapa(all);
 }
 function zmapa(all){
-  const el=$('#z-map'),Wd=Math.max(280,el.clientWidth),lv=tLevel(),T=terr.mun?{uf:terr.uf}:terr,P=proj(Wd,scopeBox(T)),ps=paths(P),sco=scopeUF(T),M=ZC.mun;
+  const el=$('#z-map'),lv=tLevel(),T=terr.mun?{uf:terr.uf}:terr,BX=scopeBox(T),HM=Math.min(460,Math.max(300,innerHeight*.55));let Wd=Math.max(260,el.clientWidth),P=proj(Wd,BX);if(P.H>HM){Wd=Math.round(Wd*HM/P.H);P=proj(Wd,BX);}const ps=paths(P),sco=scopeUF(T),M=ZC.mun;
   const agg=new Map();all.forEach(c=>{const m=M[c[0]];if(m[2]==null||!zInT(m,T))return;let a=agg.get(c[0]);if(!a)agg.set(c[0],a=[0,0]);const w=c[5];for(let i=0;i<36;i++){const k=w.charCodeAt(i);if(k>48){a[1]++;if(k===50)a[0]++;}}});
-  const r=lv==='br'?2.1:lv==='reg'?3:4.2;
+  const r=lv==='br'?1.7:lv==='reg'?2.6:4;
   let s=`<svg viewBox="0 0 ${Wd} ${P.H}" width="100%" role="img" aria-label="Mapa do ZARC por município">`;
   ps.forEach((d,i)=>{const on=lv==='br'||sco.includes(SIG[UF[i]]);s+=`<path d="${d}" fill="var(--soft)" fill-opacity="${on?1:.35}" stroke="var(--surface)" stroke-width=".8"/>`;});
   const pts=[...agg.entries()].map(([i,a])=>({i,m:M[i],p:a[1]?a[0]/a[1]:0}));pts.sort((a,b)=>a.p-b.p);
